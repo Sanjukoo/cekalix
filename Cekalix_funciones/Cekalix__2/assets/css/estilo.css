@@ -1,0 +1,68 @@
+/* ===============================
+   Paleta: rojo, negro y blanco
+   =============================== */
+:root {
+    --rojo: #c0392b;
+    --rojo-oscuro: #922b21;
+    --negro: #1c1c1c;
+    --blanco: #ffffff;
+}
+
+body {
+    background-color: #f4f4f4;
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.navbar-custom {
+    background-color: var(--negro);
+}
+
+.navbar-custom .navbar-brand {
+    color: var(--blanco) !important;
+    font-weight: bold;
+}
+
+.card-custom {
+    border: none;
+    border-top: 4px solid var(--rojo);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card-custom .card-header {
+    background-color: var(--negro);
+    color: var(--blanco);
+    font-weight: bold;
+}
+
+.btn-rojo {
+    background-color: var(--rojo);
+    border-color: var(--rojo);
+    color: var(--blanco);
+}
+
+.btn-rojo:hover {
+    background-color: var(--rojo-oscuro);
+    border-color: var(--rojo-oscuro);
+    color: var(--blanco);
+}
+
+.btn-negro {
+    background-color: var(--negro);
+    border-color: var(--negro);
+    color: var(--blanco);
+}
+
+.btn-negro:hover {
+    background-color: #000000;
+    color: var(--blanco);
+}
+
+.table thead {
+    background-color: var(--negro);
+    color: var(--blanco);
+}
+
+.modal-header {
+    background-color: var(--rojo);
+    color: var(--blanco);
+}
