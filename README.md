@@ -1,59 +1,182 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# CEKALIX - Sistema de Gestión de Inventario
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Una aplicación Laravel moderna y completa para gestionar productos, proveedores e importaciones.
 
-## About Laravel
+## Características Principales
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### Autenticación
+- Login seguro con email y contraseña
+- Control de roles de usuario
+- Sesiones protegidas con CSRF
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### Gestión de Productos
+- CRUD completo de productos
+- Categorías dinámicas (Correderas, Bisagras, Pistones, Cerraduras)
+- Atributos específicos según categoría
+- Control de stock con indicadores visuales
+- Búsqueda y paginación
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Gestión de Proveedores
+- CRUD de proveedores
+- Estado activo/inactivo
+- Protección de integridad referencial
 
-## Learning Laravel
+### Importaciones
+- Registro de llegada de mercadería
+- Relación con proveedores y productos
+- Trazabilidad completa
+- Estados de importación
+- Historial automático
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### Dashboard
+- Estadísticas en tiempo real
+- Productos bajo stock
+- Acceso rápido a funciones principales
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+## Inicio Rápido
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### Requisitos
+- PHP 8.1+
+- Composer
+- MySQL o SQLite
 
-### Premium Partners
+### Instalación
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+```bash
+# 1. Instalar dependencias (si es necesario)
+composer install
 
-## Contributing
+# 2. Crear archivo .env (si no existe)
+cp .env.example .env
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# 3. Generar clave de aplicación
+php artisan key:generate
 
-## Code of Conduct
+# 4. Ejecutar migraciones con datos de prueba
+php artisan migrate:fresh --seed
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# 5. Iniciar servidor (opcional)
+php artisan serve
+```
 
-## Security Vulnerabilities
+### Acceso
+- URL: http://localhost/cekalix/public
+- Email: admin@cekalix.com
+- Contraseña: password
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+## Documentación
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- SETUP.md - Instrucciones de instalación y configuración
+- GUIA_USO.md - Guía completa de uso del sistema
+- MIGRACION.md - Detalles técnicos
+
+---
+
+## Arquitectura
+
+### Modelos
+- User - Usuarios del sistema
+- Categoria - Categorías de productos
+- Producto - Inventario
+- AtributoProducto - Atributos dinámicos
+- Proveedor - Proveedores
+- Importacion - Importaciones
+- ImportacionDetalle - Detalles de importaciones
+
+### Base de Datos
+- SQLite (por defecto para desarrollo)
+- MySQL (para producción)
+- 7 tablas normalizadas
+- Foreign keys con cascadas
+
+### Controladores
+- AuthController - Autenticación
+- DashboardController - Panel principal
+- ProductoController - Gestión de productos
+- ProveedorController - Gestión de proveedores
+- ImportacionController - Gestión de importaciones
+
+---
+
+## Interfaz
+
+- Framework: Bootstrap 5.3
+- Responsive: Adaptable a móviles, tablets y desktop
+- Tema: Azul oscuro y rojo corporativo
+- UX: Intuitiva y amigable
+
+---
+
+## Seguridad
+
+- CSRF Protection
+- XSS Prevention
+- SQL Injection Prevention
+- Password Hashing (bcrypt)
+- Autenticación con middleware
+- Validación robusta
+
+---
+
+## Estado del Proyecto
+
+- Funcionalidades: 100% completadas
+- Pruebas: Base de datos con datos de ejemplo
+- Documentación: Completa
+- Seguridad: Implementada
+- UI/UX: Moderna y consistente
+
+---
+
+## Datos de Prueba
+
+### Usuarios
+- admin@cekalix.com / password
+- usuario@cekalix.com / password
+
+### Categorías
+- Correderas
+- Bisagras
+- Pistones
+- Cerraduras
+
+### Proveedores
+- Proveedor Internacional A.
+- Global Trade Corp.
+- Importadora del Pacífico
+
+---
+
+## Tecnologías
+
+- Backend: Laravel 11, PHP 8.1+
+- Frontend: Bootstrap 5.3, Blade Templates
+- Database: SQLite / MySQL
+- ORM: Eloquent
+- Validación: Form Requests
+- Seguridad: Laravel Security Features
+
+---
+
+## Soporte
+
+Para más información:
+- Documentación de Laravel: https://laravel.com/docs
+- Consulta SETUP.md para configuración
+- Consulta GUIA_USO.md para usar la aplicación
+- Consulta MIGRACION.md para detalles técnicos
+
+---
+
+## Licencia
+
+Este proyecto es código original desarrollado como sistema de gestión de inventario.
+
+---
+
+Versión: 1.0.0
+Estado: Producción
