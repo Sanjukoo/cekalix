@@ -40,7 +40,7 @@ Una aplicación Laravel moderna y completa para gestionar productos, proveedores
 ### Requisitos
 - PHP 8.1+
 - Composer
-- MySQL o SQLite
+- MySQL / MariaDB (XAMPP)
 
 ### Instalación
 
@@ -88,8 +88,7 @@ php artisan serve
 - ImportacionDetalle - Detalles de importaciones
 
 ### Base de Datos
-- SQLite (por defecto para desarrollo)
-- MySQL (para producción)
+- MySQL / MariaDB (base de datos `cekalix`)
 - 7 tablas normalizadas
 - Foreign keys con cascadas
 
@@ -155,7 +154,7 @@ php artisan serve
 
 - Backend: Laravel 11, PHP 8.1+
 - Frontend: Bootstrap 5.3, Blade Templates
-- Database: SQLite / MySQL
+- Database: MySQL / MariaDB
 - ORM: Eloquent
 - Validación: Form Requests
 - Seguridad: Laravel Security Features

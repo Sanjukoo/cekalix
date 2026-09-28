@@ -284,7 +284,7 @@ database/seeders/
 Backend:
 - Laravel 11.x
 - PHP 8.1+
-- MySQL / SQLite
+- MySQL / MariaDB
 
 Frontend:
 - Bootstrap 5.3
@@ -348,4 +348,4 @@ La arquitectura Laravel permite fácil expansión con nuevas funcionalidades, m�
 ---
 
 Estado: Listo para producción
-Base de datos: SQLite (fácilmente migrable a MySQL)
+Base de datos: MySQL / MariaDB

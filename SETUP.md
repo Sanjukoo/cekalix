@@ -25,20 +25,14 @@ URL: http://localhost/cekalix/public
 
 ## Base de Datos
 
-### Configuración Actual (SQLite)
-La aplicación está configurada para usar SQLite para facilitar el desarrollo y pruebas.
-
-Archivo: database/database.sqlite
-
-### Migrar a MySQL (Opcional)
-
-Si deseas usar MySQL en lugar de SQLite:
+### Configuración (MySQL / MariaDB de XAMPP)
+La aplicación usa MySQL (MariaDB incluido en XAMPP).
 
 #### 1. Inicia MySQL en XAMPP
 - Abre XAMPP Control Panel
 - Haz clic en "Start" junto a MySQL
 
-#### 2. Actualiza el archivo .env
+#### 2. Configura el archivo .env
 ```env
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
@@ -48,9 +42,16 @@ DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-#### 3. Crea la base de datos MySQL
+#### 3. Crea la base de datos
+Desde phpMyAdmin (http://localhost/phpmyadmin) o por consola:
 ```bash
-php artisan migrate:fresh --seed
+C:\xampp\mysql\bin\mysql -u root -e "CREATE DATABASE cekalix CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+```
+Los tests usan una base aparte, `cekalix_test` (créala igual).
+
+#### 4. Ejecuta migraciones y seeders
+```bash
+php artisan migrate --seed
 ```
 
 ---
@@ -156,7 +157,7 @@ php artisan route:list
 ## Solución de Problemas
 
 ### Error: "SQLSTATE[HY000] [2002] No se puede establecer conexión"
-Solución: MySQL no está ejecutándose. Inicia MySQL desde XAMPP Control Panel o vuelve a usar SQLite.
+Solución: MySQL no está ejecutándose. Inicia MySQL desde XAMPP Control Panel.
 
 ### Error: "Port already in use"
 Solución: Cambia el puerto en APP_URL en el .env
