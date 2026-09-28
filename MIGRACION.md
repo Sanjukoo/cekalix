@@ -10,10 +10,10 @@ Se ha migrado exitosamente 3 sistemas PHP independientes a una única aplicació
 
 ### 1. Cekalix_1 - Sistema de Autenticación
 De: PHP Vanilla con PDO
-A: Laravel Auth + AuthController
+A: Laravel Fortify
 
 Cambios realizados:
-- Convertido a AuthController con validación Form Request
+- Login y logout gestionados por Laravel Fortify (mensajes en lang/es)
 - Migraciones automáticas de sesión
 - Middleware auth para proteger rutas
 - Vistas Blade con Bootstrap 5
@@ -166,7 +166,7 @@ importacion_detalles
 
 | Funcionalidad | Sistema Original | Estado en Laravel |
 |---------------|-----------------|------------------|
-| Login | Si | Laravel AuthController |
+| Login | Si | Laravel Fortify |
 | Gestión de Usuarios | Si | Model + Controller |
 | Registro de Productos | Si | ProductoController |
 | Listado de Productos | Si | Tabla con AJAX + Paginación |
@@ -223,7 +223,6 @@ app/Models/
 
 ### Controladores
 app/Http/Controllers/
-├── AuthController.php
 ├── DashboardController.php
 ├── ProductoController.php
 ├── ProveedorController.php

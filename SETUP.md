@@ -89,7 +89,7 @@ php artisan route:list
 - ImportacionDetalle - Detalles de importaciones
 
 ### Controladores
-- AuthController - Autenticación
+- Laravel Fortify - Autenticación (login/logout)
 - DashboardController - Panel principal
 - ProductoController - CRUD de productos
 - ProveedorController - CRUD de proveedores

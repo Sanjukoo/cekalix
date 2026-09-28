@@ -93,7 +93,7 @@ php artisan serve
 - Foreign keys con cascadas
 
 ### Controladores
-- AuthController - Autenticación
+- Laravel Fortify - Autenticación (login/logout)
 - DashboardController - Panel principal
 - ProductoController - Gestión de productos
 - ProveedorController - Gestión de proveedores
