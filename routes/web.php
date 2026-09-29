@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\ImportacionController;
+use App\Http\Controllers\CategoriaController;
 
 // Las rutas /login y /logout las registra Laravel Fortify (config/fortify.php)
 Route::get('/', function () {
@@ -19,6 +20,10 @@ Route::middleware('auth')->group(function () {
     // Productos
     Route::resource('productos', ProductoController::class);
     Route::get('/productos-ajax/listar', [ProductoController::class, 'listarAjax'])->name('productos.listar-ajax');
+
+    // Categorías
+    Route::get('/categorias/nueva', [CategoriaController::class, 'create'])->name('categorias.create');
+    Route::post('/categorias', [CategoriaController::class, 'store'])->name('categorias.store');
 
     // Proveedores
     Route::resource('proveedores', ProveedorController::class);

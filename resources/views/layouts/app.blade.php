@@ -29,6 +29,12 @@
             color: white !important;
         }
 
+        .logo-cekalix {
+            height: 45px;
+            width: auto;
+            display: block;
+        }
+
         .btn-rojo {
             background-color: var(--danger-color);
             color: white;
@@ -163,7 +169,11 @@
 <body>
     <nav class="navbar navbar-expand-md navbar-custom mb-4">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{{ route('dashboard') }}">CEKALIX</a>
+            <a class="navbar-brand" href="{{ route('dashboard') }}">
+                <img src="{{ asset('images/logo-cekalix.jpg') }}" 
+                alt="Logo CEKALIX" 
+                class="logo-cekalix">
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
