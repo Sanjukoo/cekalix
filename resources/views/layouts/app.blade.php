@@ -7,7 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #000000;
+            --primary-color: #161313;
             --danger-color: #C41C3B;
             --dark-color: #1a1a1a;
             --light-input: #E3F2FD;
@@ -15,12 +15,13 @@
         }
 
         body {
-            background-color: #f5f5f5;
+            background-color: #ffffff;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
 
         .navbar-custom {
-            background-color: #000000;
+            background-color: #ea576beb;
+            
         }
 
         .navbar-brand {
@@ -30,7 +31,7 @@
         }
 
         .logo-cekalix {
-            height: 45px;
+            height: 95px;
             width: auto;
             display: block;
         }
@@ -170,7 +171,7 @@
     <nav class="navbar navbar-expand-md navbar-custom mb-4">
         <div class="container-fluid">
             <a class="navbar-brand" href="{{ route('dashboard') }}">
-                <img src="{{ asset('images/logo-cekalix.jpg') }}" 
+                <img src="{{ asset('images/logo-cekalix.png') }}" 
                 alt="Logo CEKALIX" 
                 class="logo-cekalix">
             </a>
@@ -208,18 +209,23 @@
             @auth
                 <div class="col-md-3 col-lg-2">
                     <div class="sidebar">
-                        <a href="{{ route('dashboard') }}" class="@if(request()->routeIs('dashboard')) active @endif">
-                            Dashboard
+                        <a href="{{ route('dashboard') }}" class="{{request()->routeIs('dashboard') ? 'active' : ''}}">
+                            Mi dashboard
                         </a>
-                        <a href="{{ route('productos.index') }}" class="@if(request()->routeIs('productos.*')) active @endif">
-                            Productos
-                        </a>
-                        <a href="{{ route('proveedores.index') }}" class="@if(request()->routeIs('proveedores.*')) active @endif">
+                        @if(in_array(auth()->user()->role,['inventario', 'ventas'], true))
+                            <a href="{{route('productos.index') }}" class="{{ request()->routeIs('productos.*') ? 'active' : ''}}">
+                                Catálogo y Stock
+                            </a>
+                        @endif
+
+                        @if(auth()->user()->role === 'admin')
+                        <a href="{{route('proveedores.index') }}" class="{{request()->routeIs('proveedores.*') ? 'active' : ''}}">
                             Proveedores
                         </a>
-                        <a href="{{ route('importaciones.index') }}" class="@if(request()->routeIs('importaciones.*')) active @endif">
+                        <a href="{{route('importaciones.index')}}" class="{{request()->routeIs('importaciones.*') ? 'active' : ''}}">
                             Importaciones
                         </a>
+                        @endif
                     </div>
                 </div>
                 <div class="col-md-9 col-lg-10">
