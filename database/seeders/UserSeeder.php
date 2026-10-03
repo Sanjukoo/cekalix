@@ -11,16 +11,21 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         $usuarios = [
-            ['name'=>'Administrador', 'email'=>'admin@cekalix.com', 'role'=>'admin',],
-            ['name'=>'Encargado de inventario', 'email'=>'inventario@cekalix.com', 'role'=>'inventario', ],
-            ['name'=>'encargado de ventas', 'email'=>'ventas@cekalix.com', 'role'=>'ventas',]
+            ['name' => 'Administrador', 'email' => 'admin@cekalix.com', 'role' => 'admin'],
+            ['name' => 'Encargado de inventario', 'email' => 'inventario@cekalix.com', 'role' => 'inventario'],
+            ['name' => 'Encargado de ventas', 'email' => 'ventas@cekalix.com', 'role' => 'ventas'],
         ];
-        foreach($usuarios as $usuario) {
-            User::updateOrCreate(['email'=>$usuario['email']], 
-            [   'name'=>$usuario['name'],
-                'role'=>$usuario['role'],
-                'password'=>Hash::make('password'),
-            ]
+
+        // La contraseña solo se asigna al crear el usuario; volver a ejecutar
+        // el seeder no reemplaza una contraseña que ya se haya cambiado.
+        foreach ($usuarios as $usuario) {
+            User::firstOrCreate(
+                ['email' => $usuario['email']],
+                [
+                    'name' => $usuario['name'],
+                    'role' => $usuario['role'],
+                    'password' => Hash::make('password'),
+                ]
             );
         }
     }

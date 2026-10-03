@@ -47,4 +47,10 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    // Admin e inventario pueden crear, editar y eliminar productos
+    public function puedeGestionarProductos(): bool
+    {
+        return in_array($this->role, ['admin', 'inventario'], true);
+    }
 }

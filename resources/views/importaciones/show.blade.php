@@ -5,10 +5,10 @@
 @section('content')
 <div class="row mb-4">
     <div class="col-md-8">
-        <h2 style="color: #000000;">Detalles de Importación #{{ $importacion->id }}</h2>
+        <h2 class="page-title">Detalles de Importación #{{ $importacion->id }}</h2>
     </div>
     <div class="col-md-4 text-end">
-        <a href="{{ route('importaciones.index') }}" class="btn btn-secondary">Volver</a>
+        <a href="{{ route('importaciones.index') }}" class="btn btn-outline-secondary">Volver</a>
     </div>
 </div>
 
@@ -20,13 +20,13 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label class="form-label"><strong>Proveedor</strong></label>
-                        <p class="form-control-plaintext">{{ $importacion->proveedor->nombre }}</p>
+                        <p class="form-control-plaintext">{{ $importacion->proveedor->razon_social }}</p>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label"><strong>Estado</strong></label>
                         <p class="form-control-plaintext">
                             @if($importacion->estado === 'En recepción')
-                                <span class="badge bg-warning">{{ $importacion->estado }}</span>
+                                <span class="badge badge-estado en-recepcion">{{ $importacion->estado }}</span>
                             @else
                                 <span class="badge bg-success">{{ $importacion->estado }}</span>
                             @endif

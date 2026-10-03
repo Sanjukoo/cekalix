@@ -19,7 +19,7 @@
                         <td><strong>{{ $producto->codigo }}</strong></td>
                         <td>{{ $producto->nombre }}</td>
                         <td>{{ $producto->categoria->nombre }}</td>
-                        <td>{{ $producto->proveedor }}</td>
+                        <td>{{ $producto->proveedor->razon_social }}</td>
                         <td>{{ $producto->stock }}</td>
                         <td>{{ $producto->unidades_por_caja }}</td>
                         <td>

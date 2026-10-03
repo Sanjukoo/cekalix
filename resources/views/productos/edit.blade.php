@@ -5,7 +5,7 @@
 @section('content')
 <div class="row mb-4">
     <div class="col-12">
-        <h2 style="color: #000000;">Editar Producto</h2>
+        <h2 class="page-title">Editar Producto</h2>
     </div>
 </div>
 
@@ -34,10 +34,16 @@
                     @enderror
                 </div>
                 <div class="col-md-4">
-                    <label for="proveedor" class="form-label">Proveedor <span class="text-danger">*</span></label>
-                    <input type="text" id="proveedor" name="proveedor" class="form-control @error('proveedor') is-invalid @enderror"
-                           value="{{ old('proveedor', $producto->proveedor) }}" required>
-                    @error('proveedor')
+                    <label for="proveedor_id" class="form-label">Proveedor <span class="text-danger">*</span></label>
+                    <select id="proveedor_id" name="proveedor_id" class="form-select @error('proveedor_id') is-invalid @enderror" required>
+                        <option value="">-- Selecciona un proveedor --</option>
+                        @foreach($proveedores as $proveedor)
+                            <option value="{{ $proveedor->id }}" @selected(old('proveedor_id', $producto->proveedor_id) == $proveedor->id)>
+                                {{ $proveedor->razon_social }}{{ $proveedor->activo ? '' : ' (inactivo)' }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('proveedor_id')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
@@ -50,7 +56,7 @@
                             required onchange="actualizarAtributos()">
                         <option value="">-- Selecciona una categoría --</option>
                         @foreach($categorias as $categoria)
-                            <option value="{{ $categoria->id }}" @selected(old('categoria_id', $producto->categoria_id) == $categoria->id)>
+                            <option value="{{ $categoria->id }}" data-slug="{{ $categoria->slug }}" @selected(old('categoria_id', $producto->categoria_id) == $categoria->id)>
                                 {{ $categoria->nombre }}
                             </option>
                         @endforeach
@@ -89,58 +95,65 @@
 
             <div class="mt-4">
                 <button type="submit" class="btn btn-rojo">Actualizar Producto</button>
-                <a href="{{ route('productos.show', $producto) }}" class="btn btn-secondary">Cancelar</a>
+                <a href="{{ route('productos.show', $producto) }}" class="btn btn-outline-secondary">Cancelar</a>
             </div>
         </form>
     </div>
 </div>
 
 <script>
-    const atributosPorCategoria = {
-        'correderas': ['longitud', 'espesor', 'ancho', 'color'],
-        'bisagras': ['tipo', 'acabado', 'peso'],
-        'pistones': ['fuerza', 'longitud', 'acabado'],
-        'cerraduras': ['material', 'tamaño'],
-    };
+    const atributosPorCategoria = @json(
+        $categorias->mapWithKeys(function ($categoria) {
+            return [
+                $categoria->slug => $categoria->atributos->map(function ($atributo) {
+                    return [
+                        'nombre' => $atributo->nombre,
+                        'campo' => \Illuminate\Support\Str::slug($atributo->nombre)
+                    ];
+                })
+            ];
+        })
+    );
 
-    const atributosActuales = {!! json_encode($atributos) !!};
+    const atributosActuales = @json((object) $atributos);
 
     function actualizarAtributos() {
-        const categoriaId = document.getElementById('categoria_id').value;
         const selectElement = document.getElementById('categoria_id');
         const selectedOption = selectElement.options[selectElement.selectedIndex];
-        const categoriaSlug = selectedOption.text.toLowerCase();
+        const categoriaSlug = selectedOption.dataset.slug;
 
         const container = document.getElementById('atributos-container');
         container.innerHTML = '';
 
         if (categoriaSlug && atributosPorCategoria[categoriaSlug]) {
-            const atributos = atributosPorCategoria[categoriaSlug];
-            const labels = {
-                'longitud': 'Longitud',
-                'espesor': 'Espesor',
-                'ancho': 'Ancho',
-                'color': 'Color',
-                'tipo': 'Tipo',
-                'acabado': 'Acabado',
-                'peso': 'Peso',
-                'fuerza': 'Fuerza',
-                'material': 'Material',
-                'tamaño': 'Tamaño'
-            };
+            const titulo = document.createElement('h6');
+            titulo.className = 'text-danger';
+            titulo.textContent = 'Atributos de ' + selectedOption.text.trim();
 
-            let html = '<h6 class="text-danger">Atributos de ' + selectedOption.text + '</h6><div class="row">';
-            atributos.forEach(atributo => {
-                const valor = atributosActuales[atributo] || '';
-                html += `
-                    <div class="col-md-6 mb-3">
-                        <label for="atributo_${atributo}" class="form-label">${labels[atributo] || atributo}</label>
-                        <input type="text" id="atributo_${atributo}" name="atributo_${atributo}" class="form-control" value="${valor}">
-                    </div>
-                `;
+            const fila = document.createElement('div');
+            fila.className = 'row';
+
+            // Se arma con el DOM para que los valores guardados no se interpreten como HTML
+            atributosPorCategoria[categoriaSlug].forEach(atributo => {
+                const columna = document.createElement('div');
+                columna.className = 'col-md-6 mb-3';
+
+                const label = document.createElement('label');
+                label.className = 'form-label';
+                label.htmlFor = 'atributo_' + atributo.campo;
+                label.textContent = atributo.nombre;
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'form-control';
+                input.id = input.name = 'atributo_' + atributo.campo;
+                input.value = atributosActuales[atributo.campo] || '';
+
+                columna.append(label, input);
+                fila.append(columna);
             });
-            html += '</div>';
-            container.innerHTML = html;
+
+            container.append(titulo, fila);
         }
     }
 

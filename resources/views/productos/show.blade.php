@@ -5,11 +5,13 @@
 @section('content')
 <div class="row mb-4">
     <div class="col-md-8">
-        <h2 style="color: #000000;">Detalles del Producto</h2>
+        <h2 class="page-title">Detalles del Producto</h2>
     </div>
     <div class="col-md-4 text-end">
-        <a href="{{ route('productos.edit', $producto) }}" class="btn btn-warning">Editar</a>
-        <a href="{{ route('productos.index') }}" class="btn btn-secondary">Volver</a>
+        @if(auth()->user()->puedeGestionarProductos())
+            <a href="{{ route('productos.edit', $producto) }}" class="btn btn-negro">Editar</a>
+        @endif
+        <a href="{{ route('productos.index') }}" class="btn btn-outline-secondary">Volver</a>
     </div>
 </div>
 
@@ -32,11 +34,11 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label class="form-label"><strong>Categoría</strong></label>
-                        <p class="form-control-plaintext"><span class="badge bg-info">{{ $producto->categoria->nombre }}</span></p>
+                        <p class="form-control-plaintext"><span class="badge badge-categoria">{{ $producto->categoria->nombre }}</span></p>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label"><strong>Proveedor</strong></label>
-                        <p class="form-control-plaintext">{{ $producto->proveedor }}</p>
+                        <p class="form-control-plaintext">{{ $producto->proveedor->razon_social }}</p>
                     </div>
                 </div>
 
@@ -94,18 +96,20 @@
             </div>
         </div>
 
-        <div class="card card-custom mt-3">
-            <div class="card-header">Acciones</div>
-            <div class="card-body">
-                <form action="{{ route('productos.destroy', $producto) }}" method="POST">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-danger w-100" onclick="return confirm('¿Está seguro de que desea eliminar este producto?')">
-                        Eliminar Producto
-                    </button>
-                </form>
+        @if(auth()->user()->puedeGestionarProductos())
+            <div class="card card-custom mt-3">
+                <div class="card-header">Acciones</div>
+                <div class="card-body">
+                    <form action="{{ route('productos.destroy', $producto) }}" method="POST">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-outline-rojo w-100" onclick="return confirm('¿Está seguro de que desea eliminar este producto?')">
+                            Eliminar Producto
+                        </button>
+                    </form>
+                </div>
             </div>
-        </div>
+        @endif
     </div>
 </div>
 @endsection

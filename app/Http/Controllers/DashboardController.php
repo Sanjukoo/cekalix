@@ -17,9 +17,11 @@ class DashboardController extends Controller
         //Acceso al dashboard según el rol iniciado
         switch($role){
             case 'admin':
+                $totalProductos=Producto::count();
+                $productosBajoStock=Producto::where('stock','<',10)->count();
                 $totalProveedores=Proveedor::activos()->count();
                 $totalImportaciones= Importacion::count();
-                return view('dashboard.admin', compact('totalProveedores', 'totalImportaciones'));
+                return view('dashboard.admin', compact('totalProductos', 'productosBajoStock', 'totalProveedores', 'totalImportaciones'));
             case 'inventario':
                 $totalProductos=Producto::count();
                 $productosBajoStock=Producto::where('stock','<',10)->count();

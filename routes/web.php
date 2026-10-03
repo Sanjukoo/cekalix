@@ -19,10 +19,10 @@ Route::middleware('auth')->group(function () {
         ->middleware('role:admin,inventario,ventas')
         ->name('dashboard');
 
-        // Registro y edición de productos: inventario.
-    Route::middleware('role:inventario')->group(function () {
+    // Registro, edición y eliminación de productos: admin e inventario.
+    Route::middleware('role:admin,inventario')->group(function () {
         Route::resource('productos', ProductoController::class)
-            ->only(['create', 'store', 'edit', 'update']);
+            ->only(['create', 'store', 'edit', 'update', 'destroy']);
 
         Route::get('/categorias/nueva', [
             CategoriaController::class,
@@ -35,13 +35,11 @@ Route::middleware('auth')->group(function () {
         ])->name('categorias.store');
     });
 
-    // Catálogo y stock: inventario y ventas.
-    Route::middleware('role:inventario,ventas')->group(function () {
+    // Catálogo y stock: los tres roles.
+    Route::middleware('role:admin,inventario,ventas')->group(function () {
         Route::resource('productos', ProductoController::class)
             ->only(['index', 'show']);
     });
-
-
 
     // Selector de productos para las operaciones autorizadas.
     Route::get('/productos-ajax/listar', [
@@ -53,28 +51,14 @@ Route::middleware('auth')->group(function () {
 
     // Proveedores e importaciones: administración.
     Route::middleware('role:admin')->group(function () {
-        Route::resource('proveedores', ProveedorController::class);
+        // Laravel singulariza en inglés ({proveedore}); se fija el nombre
+        // para que coincida con el parámetro del controlador.
+        Route::resource('proveedores', ProveedorController::class)
+            ->except(['show'])
+            ->parameters(['proveedores' => 'proveedor']);
 
         Route::resource('importaciones', ImportacionController::class)
-            ->only(['index', 'create', 'store', 'show']);
+            ->only(['index', 'create', 'store', 'show'])
+            ->parameters(['importaciones' => 'importacion']);
     });
 });
-
-    /*
-    // Dashboard
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
-    // Productos
-    Route::resource('productos', ProductoController::class);
-    Route::get('/productos-ajax/listar', [ProductoController::class, 'listarAjax'])->name('productos.listar-ajax');
-
-    // Categorías
-    Route::get('/categorias/nueva', [CategoriaController::class, 'create'])->name('categorias.create');
-    Route::post('/categorias', [CategoriaController::class, 'store'])->name('categorias.store');
-
-    // Proveedores
-    Route::resource('proveedores', ProveedorController::class);
-
-    // Importaciones
-    Route::resource('importaciones', ImportacionController::class)->only(['index', 'create', 'store', 'show']);
-    */

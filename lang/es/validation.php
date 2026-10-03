@@ -48,6 +48,10 @@ return [
         'email' => 'correo',
         'password' => 'contraseña',
         'name' => 'nombre',
+        'razon_social' => 'razón social',
+        'identificador_wechat' => 'ID de WeChat',
+        'correo_electronico' => 'correo electrónico',
+        'pais_origen' => 'país de origen',
     ],
 
 ];

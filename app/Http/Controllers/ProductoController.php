@@ -5,83 +5,68 @@ namespace App\Http\Controllers;
 use App\Models\Producto;
 use App\Models\Categoria;
 use App\Models\AtributoProducto;
+use App\Models\Proveedor;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ProductoController extends Controller
 {
-    const ATRIBUTOS_POR_CATEGORIA = [
-        'correderas' => ['longitud', 'espesor', 'ancho', 'color'],
-        'bisagras' => ['tipo', 'acabado', 'peso'],
-        'pistones' => ['fuerza', 'longitud', 'acabado'],
-        'cerraduras' => ['material', 'tamaño'],
-    ];
-
     public function index()
     {
-        $productos = Producto::with('categoria')->paginate(15);
+        $productos = Producto::with('categoria', 'proveedor')->paginate(15);
         return view('productos.index', compact('productos'));
     }
 
     public function create()
     {
         $categorias = Categoria::with('atributos')
-          ->orderBy('nombre')
-          ->get();
-        return view('productos.create', compact('categorias'));
-        }
+            ->orderBy('nombre')
+            ->get();
+        $proveedores = Proveedor::activos()->orderBy('razon_social')->get();
+        return view('productos.create', compact('categorias', 'proveedores'));
+    }
 
     public function store(Request $request)
     {
-    $validated = $request->validate([
-        'codigo' => 'required|string|unique:productos,codigo|max:50',
-        'nombre' => 'required|string|max:100',
-        'categoria_id' => 'required|exists:categorias,id',
-        'proveedor' => 'required|string|max:100',
-        'stock' => 'required|integer|min:0',
-        'unidades_por_caja' => 'required|integer|min:1',
-        'descripcion' => 'nullable|string',
-    ]);
+        $validated = $request->validate([
+            'codigo' => 'required|string|unique:productos,codigo|max:50',
+            'nombre' => 'required|string|max:100',
+            'categoria_id' => 'required|exists:categorias,id',
+            'proveedor_id' => 'required|exists:proveedores,id',
+            'stock' => 'required|integer|min:0',
+            'unidades_por_caja' => 'required|integer|min:1',
+            'descripcion' => 'nullable|string',
+        ]);
 
-    // Crear el producto
-    $producto = Producto::create($validated);
+        DB::transaction(function () use ($request, $validated) {
+            $producto = Producto::create($validated);
+            $this->guardarAtributos($request, $producto);
+        });
 
-    // Obtener la categoría con sus atributos
-    $categoria = Categoria::with('atributos')
-        ->find($validated['categoria_id']);
-
-    // Guardar los atributos personalizados
-    foreach ($categoria->atributos as $atributo) {
-
-        $campo = \Illuminate\Support\Str::slug($atributo->nombre);
-
-        $valor = $request->input("atributo_$campo");
-
-        if ($valor !== null && $valor !== '') {
-
-            AtributoProducto::create([
-                'producto_id' => $producto->id,
-                'clave' => $campo,
-                'valor' => $valor,
-            ]);
-        }
-    }
-
-    return redirect()
-        ->route('productos.index')
-        ->with('success', 'Producto registrado correctamente.');
+        return redirect()
+            ->route('productos.index')
+            ->with('success', 'Producto registrado correctamente.');
     }
 
     public function show(Producto $producto)
     {
-        $producto->load('categoria', 'atributos');
+        $producto->load('categoria', 'proveedor', 'atributos');
         return view('productos.show', compact('producto'));
     }
 
     public function edit(Producto $producto)
     {
-        $categorias = Categoria::orderBy('nombre')->get();
+        $categorias = Categoria::with('atributos')
+            ->orderBy('nombre')
+            ->get();
+        // Activos, más el actual aunque esté inactivo, para no perderlo al editar
+        $proveedores = Proveedor::activos()
+            ->orWhere('id', $producto->proveedor_id)
+            ->orderBy('razon_social')
+            ->get();
         $atributos = $producto->obtenerAtributos();
-        return view('productos.edit', compact('producto', 'categorias', 'atributos'));
+        return view('productos.edit', compact('producto', 'categorias', 'proveedores', 'atributos'));
     }
 
     public function update(Request $request, Producto $producto)
@@ -90,45 +75,55 @@ class ProductoController extends Controller
             'codigo' => 'required|string|unique:productos,codigo,' . $producto->id . '|max:50',
             'nombre' => 'required|string|max:100',
             'categoria_id' => 'required|exists:categorias,id',
-            'proveedor' => 'required|string|max:100',
+            'proveedor_id' => 'required|exists:proveedores,id',
             'stock' => 'required|integer|min:0',
             'unidades_por_caja' => 'required|integer|min:1',
             'descripcion' => 'nullable|string',
         ]);
 
-        $producto->update($validated);
+        DB::transaction(function () use ($request, $validated, $producto) {
+            $producto->update($validated);
 
-        // Actualizar atributos
-        $categoria = Categoria::find($validated['categoria_id']);
-        $atributosEsperados = self::ATRIBUTOS_POR_CATEGORIA[$categoria->slug] ?? [];
-
-        // Eliminar atributos anteriores
-        $producto->atributos()->delete();
-
-        // Guardar nuevos atributos
-        foreach ($atributosEsperados as $atributo) {
-            $valor = $request->input("atributo_$atributo");
-            if ($valor) {
-                AtributoProducto::create([
-                    'producto_id' => $producto->id,
-                    'clave' => $atributo,
-                    'valor' => $valor,
-                ]);
-            }
-        }
+            // Reemplazar los atributos anteriores por los de la categoría actual
+            $producto->atributos()->delete();
+            $this->guardarAtributos($request, $producto);
+        });
 
         return redirect()->route('productos.show', $producto)->with('success', 'Producto actualizado correctamente.');
     }
 
     public function destroy(Producto $producto)
     {
+        if ($producto->importacionDetalles()->exists()) {
+            return redirect()->route('productos.index')->with('error', 'No se puede eliminar un producto que tiene importaciones registradas.');
+        }
+
         $producto->delete();
         return redirect()->route('productos.index')->with('success', 'Producto eliminado correctamente.');
     }
 
+    // Guarda los atributos que define la categoría del producto
+    private function guardarAtributos(Request $request, Producto $producto): void
+    {
+        $categoria = Categoria::with('atributos')->find($producto->categoria_id);
+
+        foreach ($categoria->atributos as $atributo) {
+            $campo = Str::slug($atributo->nombre);
+            $valor = $request->input("atributo_$campo");
+
+            if ($valor !== null && $valor !== '') {
+                AtributoProducto::create([
+                    'producto_id' => $producto->id,
+                    'clave' => $campo,
+                    'valor' => $valor,
+                ]);
+            }
+        }
+    }
+
     public function listarAjax()
     {
-        $productos = Producto::with('categoria', 'atributos')->get();
+        $productos = Producto::with('categoria', 'proveedor', 'atributos')->get();
         return view('productos.tabla', compact('productos'));
     }
 }

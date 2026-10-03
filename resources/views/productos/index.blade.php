@@ -5,13 +5,15 @@
 @section('content')
 <div class="row mb-4">
     <div class="col-md-8">
-        <h2 style="color: #000000;">Productos Registrados</h2>
+        <h2 class="page-title">Productos Registrados</h2>
     </div>
-    <div class="col-md-4 text-end">
-        <a href="{{ route('productos.create') }}" class="btn btn-rojo">
-            Nuevo Producto
-        </a>
-    </div>
+    @if(auth()->user()->puedeGestionarProductos())
+        <div class="col-md-4 text-end">
+            <a href="{{ route('productos.create') }}" class="btn btn-rojo">
+                Nuevo Producto
+            </a>
+        </div>
+    @endif
 </div>
 
 <div class="card card-custom">
@@ -35,8 +37,8 @@
                             <tr>
                                 <td><strong>{{ $producto->codigo }}</strong></td>
                                 <td>{{ $producto->nombre }}</td>
-                                <td><span class="badge bg-info">{{ $producto->categoria->nombre }}</span></td>
-                                <td>{{ $producto->proveedor }}</td>
+                                <td><span class="badge badge-categoria">{{ $producto->categoria->nombre }}</span></td>
+                                <td>{{ $producto->proveedor->razon_social }}</td>
                                 <td>
                                     @if($producto->stock < 10)
                                         <span class="badge bg-danger">{{ $producto->stock }}</span>
@@ -46,13 +48,15 @@
                                 </td>
                                 <td>{{ $producto->unidades_por_caja }}</td>
                                 <td>
-                                    <a href="{{ route('productos.show', $producto) }}" class="btn btn-sm btn-info" title="Ver">Ver</a>
-                                    <a href="{{ route('productos.edit', $producto) }}" class="btn btn-sm btn-warning" title="Editar">Editar</a>
-                                    <form action="{{ route('productos.destroy', $producto) }}" method="POST" style="display:inline;">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Está seguro?')" title="Eliminar">Eliminar</button>
-                                    </form>
+                                    <a href="{{ route('productos.show', $producto) }}" class="btn btn-sm btn-outline-dark" title="Ver">Ver</a>
+                                    @if(auth()->user()->puedeGestionarProductos())
+                                        <a href="{{ route('productos.edit', $producto) }}" class="btn btn-sm btn-negro" title="Editar">Editar</a>
+                                        <form action="{{ route('productos.destroy', $producto) }}" method="POST" style="display:inline;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-outline-rojo" onclick="return confirm('¿Está seguro?')" title="Eliminar">Eliminar</button>
+                                        </form>
+                                    @endif
                                 </td>
                             </tr>
                         @endforeach

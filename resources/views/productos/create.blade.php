@@ -6,7 +6,7 @@
 
 <div class="row mb-4">
     <div class="col-12">
-        <h2 style="color: #000000;">Nuevo Producto</h2>
+        <h2 class="page-title">Nuevo Producto</h2>
     </div>
 </div>
 
@@ -67,20 +67,26 @@
                 </div>
 
                 <div class="col-md-4">
-                    <label for="proveedor" class="form-label">
+                    <label for="proveedor_id" class="form-label">
                         Proveedor <span class="text-danger">*</span>
                     </label>
 
-                    <input
-                        type="text"
-                        id="proveedor"
-                        name="proveedor"
-                        class="form-control @error('proveedor') is-invalid @enderror"
-                        value="{{ old('proveedor') }}"
+                    <select
+                        id="proveedor_id"
+                        name="proveedor_id"
+                        class="form-select @error('proveedor_id') is-invalid @enderror"
                         required
                     >
+                        <option value="">-- Selecciona un proveedor --</option>
 
-                    @error('proveedor')
+                        @foreach($proveedores as $proveedor)
+                            <option value="{{ $proveedor->id }}" @selected(old('proveedor_id') == $proveedor->id)>
+                                {{ $proveedor->razon_social }}
+                            </option>
+                        @endforeach
+                    </select>
+
+                    @error('proveedor_id')
                         <div class="invalid-feedback">
                             {{ $message }}
                         </div>
@@ -227,7 +233,7 @@
 
                 <a
                     href="{{ route('productos.index') }}"
-                    class="btn btn-secondary"
+                    class="btn btn-outline-secondary"
                 >
                     Cancelar
                 </a>

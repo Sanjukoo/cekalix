@@ -8,16 +8,19 @@ use Symfony\Component\HttpFoundation\Response;
 
 class CheckRole
 {
-    /* Autenticación por roles dependiendo quien ingresa al sistema*/
-    public function handle(Request $request,Closure $next, string ...$roles
-    ): Response {
-        $user = $request ->user();
+    /* Autenticación por roles dependiendo quien ingresa al sistema */
+    public function handle(Request $request, Closure $next, string ...$roles): Response
+    {
+        $user = $request->user();
+
         if (!$user) {
             return redirect()->route('login');
         }
+
         if (!in_array($user->role, $roles, true)) {
-            abort (403, 'No tienes permisos para esta función mi king');
+            abort(403, 'No tienes permisos para acceder a esta función.');
         }
-        return $next ($request);
+
+        return $next($request);
     }
 }

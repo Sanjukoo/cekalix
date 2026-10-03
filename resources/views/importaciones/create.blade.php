@@ -5,7 +5,7 @@
 @section('content')
 <div class="row mb-4">
     <div class="col-12">
-        <h2 style="color: #000000;">Nueva Importación</h2>
+        <h2 class="page-title">Nueva Importación</h2>
     </div>
 </div>
 
@@ -24,7 +24,7 @@
                         <option value="">-- Seleccionar proveedor registrado --</option>
                         @foreach($proveedores as $proveedor)
                             <option value="{{ $proveedor->id }}" @selected(old('proveedor_id') == $proveedor->id)>
-                                {{ $proveedor->nombre }}
+                                {{ $proveedor->razon_social }}
                             </option>
                         @endforeach
                     </select>
@@ -91,8 +91,8 @@
             </div>
 
             <div class="mt-4">
-                <button type="submit" class="btn btn-primary">Registrar Importación</button>
-                <a href="{{ route('importaciones.index') }}" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-rojo">Registrar Importación</button>
+                <a href="{{ route('importaciones.index') }}" class="btn btn-outline-secondary">Cancelar</a>
             </div>
         </form>
     </div>

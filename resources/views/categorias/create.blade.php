@@ -6,7 +6,7 @@
 
 <div class="row mb-4">
     <div class="col-12">
-        <h2 style="color: #000000;">Nueva Categoría</h2>
+        <h2 class="page-title">Nueva Categoría</h2>
     </div>
 </div>
 
@@ -86,7 +86,7 @@
 
                         <button
                             type="button"
-                            class="btn btn-danger"
+                            class="btn btn-outline-rojo"
                             onclick="eliminarAtributo(this)"
                         >
                             Eliminar
@@ -101,7 +101,7 @@
 
             <button
                 type="button"
-                class="btn btn-secondary mb-4"
+                class="btn btn-outline-secondary mb-4"
                 onclick="agregarAtributo()"
             >
                 + Agregar atributo
@@ -119,7 +119,7 @@
 
                 <a
                     href="{{ route('productos.create') }}"
-                    class="btn btn-secondary"
+                    class="btn btn-outline-secondary"
                 >
                     Cancelar
                 </a>
@@ -160,7 +160,7 @@ function agregarAtributo() {
 
             <button
                 type="button"
-                class="btn btn-danger"
+                class="btn btn-outline-rojo"
                 onclick="eliminarAtributo(this)"
             >
                 Eliminar

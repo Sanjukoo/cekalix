@@ -5,10 +5,10 @@
 @section('content')
 <div class="row mb-4">
     <div class="col-md-8">
-        <h2 style="color: #000000;">Importaciones Registradas</h2>
+        <h2 class="page-title">Importaciones Registradas</h2>
     </div>
     <div class="col-md-4 text-end">
-        <a href="{{ route('importaciones.create') }}" class="btn btn-primary">
+        <a href="{{ route('importaciones.create') }}" class="btn btn-rojo">
             Nueva Importación
         </a>
     </div>
@@ -36,7 +36,7 @@
                             @foreach($importacion->detalles as $detalle)
                                 <tr>
                                     <td><strong>#{{ $importacion->id }}</strong></td>
-                                    <td>{{ $importacion->proveedor->nombre }}</td>
+                                    <td>{{ $importacion->proveedor->razon_social }}</td>
                                     <td>
                                         <small class="d-block">Fac: {{ $importacion->numero_factura }}</small>
                                         <small class="text-muted">Cont: {{ $importacion->numero_contenedor }}</small>
@@ -55,7 +55,7 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <a href="{{ route('importaciones.show', $importacion) }}" class="btn btn-sm btn-info" title="Ver">Ver</a>
+                                        <a href="{{ route('importaciones.show', $importacion) }}" class="btn btn-sm btn-outline-dark" title="Ver">Ver</a>
                                     </td>
                                 </tr>
                             @endforeach

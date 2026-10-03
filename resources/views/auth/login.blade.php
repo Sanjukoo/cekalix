@@ -8,7 +8,7 @@
         <div class="col-md-5 col-lg-4">
             <div class="card card-custom shadow">
                 <div class="card-body p-5">
-                    <h3 class="text-center mb-1" style="color: #000000; font-weight: 700;">CEKALIX</h3>
+                    <img src="{{ asset('images/logo-cekalix.png') }}" alt="Logo CEKALIX" class="login-logo">
                     <p class="text-center text-muted mb-4">Inicio de Sesión</p>
 
                     @if(session('success'))

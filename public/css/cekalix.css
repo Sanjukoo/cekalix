@@ -1,0 +1,340 @@
+/*
+ * Estilos de CEKALIX
+ * Paleta tomada del logo: negro, rojo y blanco, con grises neutros.
+ */
+
+:root {
+    --ck-rojo: #c8102e;
+    --ck-rojo-oscuro: #a00d25;
+    --ck-rojo-suave: #fdecef;
+    --ck-negro: #141414;
+    --ck-negro-claro: #2b2b2b;
+    --ck-gris-fondo: #f4f5f7;
+    --ck-gris-borde: #dee2e6;
+    --ck-gris-texto: #6c757d;
+    --ck-texto: #212529;
+    --ck-radio: 0.5rem;
+    --ck-sombra: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --ck-alto-barra: 64px;
+
+    /* Bootstrap usa estas variables en enlaces, focos y paginación */
+    --bs-primary: var(--ck-rojo);
+    --bs-primary-rgb: 200, 16, 46;
+    --bs-link-color: var(--ck-rojo);
+    --bs-link-color-rgb: 200, 16, 46;
+    --bs-link-hover-color: var(--ck-rojo-oscuro);
+    --bs-link-hover-color-rgb: 160, 13, 37;
+}
+
+body {
+    background-color: var(--ck-gris-fondo);
+    color: var(--ck-texto);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* ---------- Barra superior ---------- */
+
+.navbar-custom {
+    background-color: #ffffff;
+    border-bottom: 3px solid var(--ck-rojo);
+    box-shadow: var(--ck-sombra);
+    min-height: var(--ck-alto-barra);
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+}
+
+.navbar-custom .navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0;
+    color: var(--ck-negro);
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+.logo-cekalix {
+    height: 48px;
+    width: auto;
+    display: block;
+}
+
+.navbar-custom .nav-link {
+    color: var(--ck-texto);
+    font-weight: 500;
+}
+
+.navbar-custom .nav-link:hover,
+.navbar-custom .nav-link:focus {
+    color: var(--ck-rojo);
+}
+
+.rol-usuario {
+    background-color: var(--ck-negro);
+    color: #ffffff;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.2rem 0.5rem;
+    border-radius: 1rem;
+    margin-left: 0.4rem;
+}
+
+.dropdown-item:active {
+    background-color: var(--ck-rojo);
+}
+
+/* ---------- Menú lateral ---------- */
+
+.sidebar {
+    background-color: #ffffff;
+    border-radius: var(--ck-radio);
+    box-shadow: var(--ck-sombra);
+    padding: 0.5rem 0;
+    overflow: hidden;
+}
+
+.sidebar a {
+    display: block;
+    padding: 0.7rem 1rem;
+    color: var(--ck-texto);
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.sidebar a:hover {
+    background-color: var(--ck-gris-fondo);
+    color: var(--ck-negro);
+}
+
+.sidebar a.active {
+    background-color: var(--ck-rojo-suave);
+    border-left-color: var(--ck-rojo);
+    color: var(--ck-rojo);
+    font-weight: 600;
+}
+
+@media (min-width: 768px) {
+    .sidebar {
+        position: sticky;
+        top: 1.5rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .sidebar {
+        margin-bottom: 1rem;
+    }
+}
+
+/* ---------- Títulos ---------- */
+
+.page-title {
+    color: var(--ck-negro);
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.stat-number {
+    color: var(--ck-negro);
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 0.25rem;
+}
+
+.stat-number.alerta {
+    color: var(--ck-rojo);
+}
+
+/* ---------- Tarjetas ---------- */
+
+.card-custom {
+    border: none;
+    border-radius: var(--ck-radio);
+    box-shadow: var(--ck-sombra);
+    background-color: #ffffff;
+}
+
+.card-custom .card-header {
+    background-color: var(--ck-negro);
+    color: #ffffff;
+    border: none;
+    font-weight: 600;
+    border-radius: var(--ck-radio) var(--ck-radio) 0 0;
+}
+
+.card-custom.bg-light {
+    background-color: #ffffff !important;
+    border-top: 3px solid var(--ck-rojo);
+}
+
+/* ---------- Botones ---------- */
+
+.btn-rojo {
+    --bs-btn-color: #ffffff;
+    --bs-btn-bg: var(--ck-rojo);
+    --bs-btn-border-color: var(--ck-rojo);
+    --bs-btn-hover-color: #ffffff;
+    --bs-btn-hover-bg: var(--ck-rojo-oscuro);
+    --bs-btn-hover-border-color: var(--ck-rojo-oscuro);
+    --bs-btn-active-color: #ffffff;
+    --bs-btn-active-bg: var(--ck-rojo-oscuro);
+    --bs-btn-active-border-color: var(--ck-rojo-oscuro);
+    --bs-btn-focus-shadow-rgb: 200, 16, 46;
+}
+
+.btn-negro {
+    --bs-btn-color: #ffffff;
+    --bs-btn-bg: var(--ck-negro);
+    --bs-btn-border-color: var(--ck-negro);
+    --bs-btn-hover-color: #ffffff;
+    --bs-btn-hover-bg: var(--ck-negro-claro);
+    --bs-btn-hover-border-color: var(--ck-negro-claro);
+    --bs-btn-active-color: #ffffff;
+    --bs-btn-active-bg: var(--ck-negro-claro);
+    --bs-btn-active-border-color: var(--ck-negro-claro);
+    --bs-btn-focus-shadow-rgb: 20, 20, 20;
+}
+
+.btn-outline-rojo {
+    --bs-btn-color: var(--ck-rojo);
+    --bs-btn-border-color: var(--ck-rojo);
+    --bs-btn-hover-color: #ffffff;
+    --bs-btn-hover-bg: var(--ck-rojo);
+    --bs-btn-hover-border-color: var(--ck-rojo);
+    --bs-btn-active-color: #ffffff;
+    --bs-btn-active-bg: var(--ck-rojo-oscuro);
+    --bs-btn-active-border-color: var(--ck-rojo-oscuro);
+    --bs-btn-focus-shadow-rgb: 200, 16, 46;
+}
+
+/* ---------- Formularios ---------- */
+
+.form-label {
+    color: var(--ck-texto);
+    font-weight: 500;
+}
+
+.form-control,
+.form-select {
+    background-color: #ffffff;
+    border: 1px solid var(--ck-gris-borde);
+    color: var(--ck-texto);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--ck-rojo);
+    box-shadow: 0 0 0 0.2rem rgba(200, 16, 46, 0.15);
+}
+
+.form-check-input:checked {
+    background-color: var(--ck-rojo);
+    border-color: var(--ck-rojo);
+}
+
+.form-check-input:focus {
+    border-color: var(--ck-rojo);
+    box-shadow: 0 0 0 0.2rem rgba(200, 16, 46, 0.15);
+}
+
+/* ---------- Tablas ---------- */
+
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background-color: var(--ck-gris-fondo);
+    color: var(--ck-gris-texto);
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 2px solid var(--ck-gris-borde);
+    white-space: nowrap;
+}
+
+.table-hover > tbody > tr:hover > * {
+    --bs-table-bg-state: var(--ck-rojo-suave);
+}
+
+.pagination {
+    --bs-pagination-active-bg: var(--ck-rojo);
+    --bs-pagination-active-border-color: var(--ck-rojo);
+    --bs-pagination-color: var(--ck-negro);
+    --bs-pagination-hover-color: var(--ck-rojo);
+    --bs-pagination-focus-color: var(--ck-rojo);
+    --bs-pagination-focus-box-shadow: 0 0 0 0.2rem rgba(200, 16, 46, 0.15);
+}
+
+/* ---------- Etiquetas ---------- */
+
+.badge-categoria {
+    background-color: var(--ck-negro);
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.badge-sku {
+    background-color: var(--ck-gris-fondo);
+    color: var(--ck-negro);
+    border: 1px solid var(--ck-gris-borde);
+    font-family: SFMono-Regular, Consolas, "Liberation Mono", monospace;
+    font-size: 0.85em;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
+.badge-estado {
+    padding: 0.4rem 0.65rem;
+    border-radius: 0.25rem;
+    font-weight: 600;
+}
+
+.badge-estado.en-recepcion {
+    background-color: #fff4d6;
+    color: #8a5a00;
+}
+
+.badge-estado.procesada {
+    background-color: #e3f4e6;
+    color: #1e6b2e;
+}
+
+/* ---------- Alertas ---------- */
+
+.alert {
+    border: none;
+    border-left: 4px solid;
+    border-radius: var(--ck-radio);
+}
+
+.alert-success {
+    background-color: #e3f4e6;
+    color: #1e6b2e;
+    border-left-color: #2e8b42;
+}
+
+.alert-danger {
+    background-color: var(--ck-rojo-suave);
+    color: var(--ck-rojo-oscuro);
+    border-left-color: var(--ck-rojo);
+}
+
+.text-muted {
+    color: var(--ck-gris-texto) !important;
+}
+
+/* ---------- Login ---------- */
+
+.login-logo {
+    height: 120px;
+    width: auto;
+    display: block;
+    margin: 0 auto 0.75rem;
+}

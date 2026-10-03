@@ -9,13 +9,21 @@ class Proveedor extends Model
     protected $table = 'proveedores';
 
     protected $fillable = [
-        'nombre',
+        'razon_social',
+        'identificador_wechat',
+        'correo_electronico',
+        'pais_origen',
         'activo',
     ];
 
     protected $casts = [
         'activo' => 'boolean',
     ];
+
+    public function productos()
+    {
+        return $this->hasMany(Producto::class);
+    }
 
     public function importaciones()
     {

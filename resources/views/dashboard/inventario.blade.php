@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="mb-4">
-        <h1 class="h3">Panel de inventario</h1>
+        <h1 class="page-title">Panel de inventario</h1>
 
         <p class="text-muted">
             Bienvenido, {{ auth()->user()->name }}.
@@ -18,7 +18,7 @@
                 <div class="card-body">
                     <h2 class="h5">Productos registrados</h2>
 
-                    <p class="display-6">
+                    <p class="stat-number">
                         {{ $totalProductos }}
                     </p>
 
@@ -35,7 +35,7 @@
                 <div class="card-body">
                     <h2 class="h5">Productos con stock bajo</h2>
 
-                    <p class="display-6">
+                    <p class="stat-number">
                         {{ $productosBajoStock }}
                     </p>
 

@@ -7,6 +7,7 @@ use App\Models\Proveedor;
 use App\Models\Producto;
 use App\Models\ImportacionDetalle;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ImportacionController extends Controller
 {
@@ -20,7 +21,7 @@ class ImportacionController extends Controller
 
     public function create()
     {
-        $proveedores = Proveedor::activos()->orderBy('nombre')->get();
+        $proveedores = Proveedor::activos()->orderBy('razon_social')->get();
         $productos = Producto::orderBy('codigo')->get();
         return view('importaciones.create', compact('proveedores', 'productos'));
     }
@@ -48,23 +49,30 @@ class ImportacionController extends Controller
         ]);
 
         try {
-            $importacion = Importacion::create([
-                'proveedor_id' => $validated['proveedor_id'],
-                'numero_factura' => $validated['numero_factura'],
-                'numero_contenedor' => $validated['numero_contenedor'],
-                'fecha_llegada' => $validated['fecha_llegada'],
-                'estado' => 'En recepción',
-            ]);
+            // La cabecera y el detalle se guardan juntos o no se guarda nada
+            $importacion = DB::transaction(function () use ($validated) {
+                $importacion = Importacion::create([
+                    'proveedor_id' => $validated['proveedor_id'],
+                    'numero_factura' => $validated['numero_factura'],
+                    'numero_contenedor' => $validated['numero_contenedor'],
+                    'fecha_llegada' => $validated['fecha_llegada'],
+                    'estado' => 'En recepción',
+                ]);
 
-            ImportacionDetalle::create([
-                'importacion_id' => $importacion->id,
-                'producto_id' => $validated['producto_id'],
-                'cajas_facturadas' => $validated['cajas_facturadas'],
-            ]);
+                ImportacionDetalle::create([
+                    'importacion_id' => $importacion->id,
+                    'producto_id' => $validated['producto_id'],
+                    'cajas_facturadas' => $validated['cajas_facturadas'],
+                ]);
+
+                return $importacion;
+            });
 
             return redirect()->route('importaciones.index')
                 ->with('success', "Importación #$importacion->id registrada correctamente (Estado: En recepción).");
         } catch (\Exception $e) {
+            report($e);
+
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'Error al registrar la importación. Intente nuevamente.');
