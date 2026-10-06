@@ -1,0 +1,706 @@
+/* =====================================================
+   CEKALIX - LOGIN
+   Sistema de Inventario y Ventas
+   ===================================================== */
+
+
+/* =====================================================
+   AJUSTES DEL LAYOUT GENERAL
+   Quitamos espacios de Bootstrap únicamente en esta vista
+   ===================================================== */
+
+body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+body > .container-fluid {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+body > .container-fluid > .row {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+body > .container-fluid > .row > .col-12 {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+
+/* =====================================================
+   PÁGINA COMPLETA
+   Aquí está el fondo del almacén
+   ===================================================== */
+
+.login-page {
+    width: 100%;
+    min-height: 100vh;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    padding: 35px;
+
+    /*
+        La imagen ocupa toda la pantalla.
+
+        El degradado oscurece principalmente la izquierda
+        para que el texto blanco sea legible.
+    */
+    background-image:
+        linear-gradient(
+            90deg,
+            rgba(0, 0, 0, 0.58) 0%,
+            rgba(0, 0, 0, 0.42) 35%,
+            rgba(0, 0, 0, 0.15) 65%,
+            rgba(0, 0, 0, 0.02) 100%
+        ),
+        url('../images/fondo-login.png');
+
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+
+    font-family:
+        Inter,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+}
+
+
+/* =====================================================
+   CONTENEDOR PRINCIPAL
+   IMPORTANTE: ES TRANSPARENTE
+   ===================================================== */
+
+.login-container {
+    width: 100%;
+    max-width: 1200px;
+    min-height: 620px;
+
+    display: flex;
+    align-items: stretch;
+
+    background: transparent;
+
+    border-radius: 22px;
+
+    /* Permitimos que la sombra del formulario se vea */
+    overflow: visible;
+}
+
+
+/* =====================================================
+   PANEL IZQUIERDO
+   COMPLETAMENTE TRANSPARENTE
+   ===================================================== */
+
+.login-info {
+    position: relative;
+
+    width: 55%;
+
+    display: flex;
+    align-items: center;
+
+    padding: 55px 60px;
+
+    color: #ffffff;
+
+    /*
+        NO colocar imágenes ni colores aquí.
+        Queremos ver directamente el almacén.
+    */
+    background: transparent;
+}
+
+
+/* =====================================================
+   CONTENIDO IZQUIERDO
+   ===================================================== */
+
+.login-brand {
+    position: relative;
+
+    width: 100%;
+    max-width: 560px;
+
+    z-index: 2;
+}
+
+
+/* =====================================================
+   LOGO CEKALIX
+   ===================================================== */
+
+.login-logo {
+    display: block;
+
+    width: 520px;
+    max-width: 100%;
+    height: auto;
+
+    margin-bottom: 30px;
+
+    object-fit: contain;
+
+    /* Ayuda a destacar el logo sobre el almacén */
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.35));
+}
+
+
+/* =====================================================
+   ETIQUETA SUPERIOR
+   ===================================================== */
+
+.system-label {
+    margin: 0 0 12px 0;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    letter-spacing: 2px;
+    text-transform: uppercase;
+
+    color: #e31837;
+}
+
+
+/* =====================================================
+   TÍTULO PRINCIPAL
+   ===================================================== */
+
+.login-title {
+    max-width: 550px;
+
+    margin: 0 0 20px 0;
+
+    font-size: 46px;
+    font-weight: 400;
+
+    line-height: 1.08;
+
+    letter-spacing: -1.5px;
+
+    color: #ffffff;
+
+    text-shadow:
+        0 3px 12px rgba(0, 0, 0, 0.55);
+}
+
+
+/*
+   "Inventario y Ventas"
+   más grueso, como en la referencia
+*/
+
+.login-title span {
+    display: block;
+
+    margin-top: 4px;
+
+    font-size: 50px;
+    font-weight: 800;
+
+    letter-spacing: -2px;
+
+    color: #ffffff;
+}
+
+
+/* =====================================================
+   DESCRIPCIÓN
+   ===================================================== */
+
+.login-description {
+    max-width: 510px;
+
+    margin: 0 0 32px 0;
+
+    font-size: 16px;
+    font-weight: 400;
+
+    line-height: 1.65;
+
+    color: rgba(255, 255, 255, 0.88);
+
+    text-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.65);
+}
+
+
+/* =====================================================
+   CARACTERÍSTICAS DEL SISTEMA
+   ===================================================== */
+
+.login-features {
+    display: flex;
+    flex-direction: column;
+
+    gap: 14px;
+}
+
+
+.login-feature {
+    display: flex;
+    align-items: center;
+
+    gap: 13px;
+
+    font-size: 14px;
+    font-weight: 500;
+
+    color: #ffffff;
+
+    text-shadow:
+        0 2px 7px rgba(0, 0, 0, 0.65);
+}
+
+
+/* =====================================================
+   ICONOS DE LAS CARACTERÍSTICAS
+   ===================================================== */
+
+.feature-icon {
+    flex-shrink: 0;
+
+    width: 38px;
+    height: 38px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+
+    background: rgba(10, 10, 10, 0.45);
+
+    color: #ff1738;
+
+    font-size: 16px;
+    font-weight: 800;
+
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+
+/* =====================================================
+   PANEL DERECHO
+   TARJETA BLANCA
+   ===================================================== */
+
+.login-form-container {
+    width: 45%;
+
+    display: flex;
+    align-items: center;
+
+    padding: 55px 60px;
+
+    background: rgba(255, 255, 255, 0.97);
+
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 20px;
+
+    box-shadow:
+        0 20px 50px rgba(0, 0, 0, 0.20);
+
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+
+/* =====================================================
+   FORMULARIO
+   ===================================================== */
+
+.login-form {
+    width: 100%;
+}
+
+
+/* =====================================================
+   TÍTULO "BIENVENIDO"
+   ===================================================== */
+
+.login-form h2 {
+    margin: 0 0 7px 0;
+
+    font-size: 34px;
+    font-weight: 750;
+
+    letter-spacing: -1px;
+
+    color: #1c2430;
+}
+
+
+/* =====================================================
+   SUBTÍTULO
+   ===================================================== */
+
+.login-subtitle {
+    margin: 0 0 35px 0;
+
+    font-size: 15px;
+    font-weight: 400;
+
+    color: #7d8795;
+}
+
+
+/* =====================================================
+   LABELS
+   ===================================================== */
+
+.login-form .form-label {
+    margin-bottom: 8px;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    color: #252b33;
+}
+
+
+/* =====================================================
+   INPUTS
+   ===================================================== */
+
+.login-form .form-control {
+    width: 100%;
+    height: 52px;
+
+    padding: 0 16px;
+
+    border: 1px solid #d9dee5;
+    border-radius: 10px;
+
+    background: #ffffff;
+
+    color: #252b33;
+
+    font-size: 14px;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+
+.login-form .form-control::placeholder {
+    color: #a3abb6;
+}
+
+
+.login-form .form-control:hover {
+    border-color: #bcc3cc;
+}
+
+
+.login-form .form-control:focus {
+    border-color: #ce1126;
+
+    outline: none;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 0 0 3px rgba(206, 17, 38, 0.10);
+}
+
+
+/* =====================================================
+   INPUT CON ERROR
+   ===================================================== */
+
+.login-form .form-control.is-invalid {
+    border-color: #dc3545;
+}
+
+
+/* =====================================================
+   BOTÓN INICIAR SESIÓN
+   ===================================================== */
+
+.btn-login {
+    width: 100%;
+    height: 52px;
+
+    border: none;
+    border-radius: 10px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #d30f2d,
+            #bd0e27
+        );
+
+    color: #ffffff;
+
+    font-size: 15px;
+    font-weight: 650;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+.btn-login:hover {
+    background:
+        linear-gradient(
+            135deg,
+            #e11334,
+            #c20d29
+        );
+
+    color: #ffffff;
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 10px 22px rgba(206, 17, 38, 0.27);
+}
+
+
+.btn-login:active {
+    transform: translateY(0);
+
+    box-shadow:
+        0 4px 10px rgba(206, 17, 38, 0.20);
+}
+
+
+/* =====================================================
+   DIVISOR
+   ===================================================== */
+
+.login-divider {
+    margin: 28px 0;
+
+    border: 0;
+    border-top: 1px solid #e6e8eb;
+
+    opacity: 1;
+}
+
+
+/* =====================================================
+   USUARIO DE PRUEBA
+   ===================================================== */
+
+.test-user {
+    padding: 15px 18px;
+
+    border: 1px solid #f1d4d9;
+    border-radius: 10px;
+
+    background: #fff4f6;
+
+    font-size: 12px;
+}
+
+
+/* =====================================================
+   TÍTULO USUARIO DE PRUEBA
+   ===================================================== */
+
+.test-user-title {
+    margin: 0 0 10px 0;
+
+    font-size: 11px;
+    font-weight: 700;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.8px;
+
+    color: #ce1126;
+}
+
+
+/* =====================================================
+   DATOS DEL USUARIO
+   ===================================================== */
+
+.test-user-data {
+    display: flex;
+    justify-content: space-between;
+
+    gap: 10px;
+
+    margin-top: 4px;
+
+    color: #777f89;
+}
+
+
+.test-user-data strong {
+    color: #333941;
+}
+
+
+/* =====================================================
+   ALERTAS
+   ===================================================== */
+
+.login-form .alert {
+    border: none;
+    border-radius: 10px;
+
+    font-size: 13px;
+}
+
+
+/* =====================================================
+   TABLETS / LAPTOPS PEQUEÑAS
+   ===================================================== */
+
+@media (max-width: 1000px) {
+
+    .login-container {
+        max-width: 850px;
+    }
+
+
+    .login-info {
+        width: 50%;
+
+        padding: 45px;
+    }
+
+
+    .login-form-container {
+        width: 50%;
+
+        padding: 45px;
+    }
+
+
+    .login-logo {
+        width: 180px;
+    }
+
+
+    .login-title {
+        font-size: 36px;
+    }
+
+
+    .login-title span {
+        font-size: 40px;
+    }
+
+
+    .login-description {
+        font-size: 14px;
+    }
+}
+
+
+/* =====================================================
+   CELULAR
+   ===================================================== */
+
+@media (max-width: 700px) {
+
+    .login-page {
+        min-height: 100vh;
+
+        padding: 20px;
+
+        /*
+            En móvil centramos un poco más
+            la parte interesante del almacén.
+        */
+        background-position: 35% center;
+    }
+
+
+    .login-container {
+        width: 100%;
+        max-width: 440px;
+
+        min-height: auto;
+
+        display: block;
+    }
+
+
+    /*
+       Ocultamos el contenido informativo izquierdo
+       para dejar espacio al formulario.
+    */
+
+    .login-info {
+        display: none;
+    }
+
+
+    .login-form-container {
+        width: 100%;
+
+        padding: 42px 30px;
+
+        border-radius: 18px;
+    }
+
+
+    .login-form h2 {
+        font-size: 29px;
+    }
+
+
+    .login-subtitle {
+        margin-bottom: 28px;
+    }
+
+
+    .test-user-data {
+        flex-direction: column;
+
+        gap: 2px;
+    }
+}
+
+
+/* =====================================================
+   CELULARES PEQUEÑOS
+   ===================================================== */
+
+@media (max-width: 400px) {
+
+    .login-page {
+        padding: 12px;
+    }
+
+
+    .login-form-container {
+        padding: 35px 22px;
+    }
+
+
+    .login-form h2 {
+        font-size: 26px;
+    }
+
+
+    .login-form .form-control,
+    .btn-login {
+        height: 50px;
+    }
+}
