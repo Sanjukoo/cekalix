@@ -6,7 +6,6 @@ use App\Models\Categoria;
 use App\Models\AtributoCategoria;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-
 class CategoriaController extends Controller
 {
     public function create()
