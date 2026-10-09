@@ -12,12 +12,27 @@ use Illuminate\Support\Str;
 
 class ProductoController extends Controller
 {
-    public function index()
-    {
-        $productos = Producto::with('categoria', 'proveedor')->paginate(15);
-        return view('productos.index', compact('productos'));
-    }
+    public function index(Request $request)
+   {
+        $buscar = trim($request->input('buscar', ''));
 
+        $productos = Producto::with('categoria', 'proveedor')
+            ->when($buscar !== '', function ($query) use ($buscar) {
+                $query->where(function ($q) use ($buscar) {
+                    $q->where('codigo', 'like', "%{$buscar}%")
+                        ->orWhere('nombre', 'like', "%{$buscar}%")
+                        ->orWhere('descripcion', 'like', "%{$buscar}%")
+                        ->orWhereHas('atributos', function ($atributos) use ($buscar) {
+                            $atributos->where('clave', 'like', "%{$buscar}%")
+                                ->orWhere('valor', 'like', "%{$buscar}%");
+                        });
+                });
+            })
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('productos.index', compact('productos', 'buscar'));
+    }
     public function create()
     {
         $categorias = Categoria::with('atributos')

@@ -57,13 +57,24 @@
                         @endif
 
                         @if(auth()->user()->role === 'admin')
-                        <a href="{{route('proveedores.index') }}" class="{{request()->routeIs('proveedores.*') ? 'active' : ''}}">
-                            Proveedores
-                        </a>
-                        <a href="{{route('importaciones.index')}}" class="{{request()->routeIs('importaciones.*') ? 'active' : ''}}">
-                            Importaciones
-                        </a>
+                            <a href="{{ route('proveedores.index') }}"
+                               class="{{ request()->routeIs('proveedores.*') ? 'active' : '' }}">
+                                Proveedores
+                            </a>
+
+                            <a href="{{ route('importaciones.index') }}"
+                               class="{{ request()->routeIs('importaciones.*') ? 'active' : '' }}">
+                                Importaciones
+                            </a>
                         @endif
+
+                        @if(auth()->user()->role === 'inventario')
+                            <a href="{{ route('mermas.index') }}"
+                               class="{{ request()->routeIs('mermas.*') ? 'active' : '' }}">
+                                Mermas
+                            </a>
+                        @endif
+
                     </div>
                 </div>
                 <div class="col-md-9 col-lg-10 pb-4">

@@ -16,6 +16,36 @@
     @endif
 </div>
 
+
+<div class="card card-custom mb-4">
+    <div class="card-body">
+        <form action="{{ route('productos.index') }}" method="GET">
+            <div class="row g-2">
+                <div class="col-md-9">
+                    <input
+                        type="text"
+                        name="buscar"
+                        class="form-control"
+                        placeholder="Buscar por SKU, nombre o características..."
+                        value="{{ $buscar }}"
+                    >
+                </div>
+
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-rojo">
+                        Buscar
+                    </button>
+
+                    <a href="{{ route('productos.index') }}"
+                       class="btn btn-outline-secondary">
+                        Limpiar
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="card card-custom">
     <div class="card-body">
         @if($productos->count() > 0)

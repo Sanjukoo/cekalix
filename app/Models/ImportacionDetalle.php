@@ -27,4 +27,11 @@ class ImportacionDetalle extends Model
     {
         return $this->belongsTo(Producto::class);
     }
+        public function mermas()
+    {
+        return $this->hasMany(
+            Merma::class,
+            'importacion_detalle_id'
+        );
+    }
 }
