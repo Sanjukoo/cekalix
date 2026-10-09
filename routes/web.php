@@ -6,6 +6,7 @@ use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\ImportacionController;
 use App\Http\Controllers\CategoriaController;
+use App\Http\Controllers\MermaController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -49,10 +50,9 @@ Route::middleware('auth')->group(function () {
         ->middleware('role:admin,inventario,ventas')
         ->name('productos.listar-ajax');
 
-    // Proveedores e importaciones: administración.
+    // Proveedores e importaciones: solo administrador.
     Route::middleware('role:admin')->group(function () {
-        // Laravel singulariza en inglés ({proveedore}); se fija el nombre
-        // para que coincida con el parámetro del controlador.
+
         Route::resource('proveedores', ProveedorController::class)
             ->except(['show'])
             ->parameters(['proveedores' => 'proveedor']);
@@ -61,4 +61,18 @@ Route::middleware('auth')->group(function () {
             ->only(['index', 'create', 'store', 'show'])
             ->parameters(['importaciones' => 'importacion']);
     });
+
+    // Registro y consulta de mermas: admin e inventario.
+    Route::middleware('role:inventario')->group(function () {
+
+        Route::get('/mermas', [MermaController::class, 'index'])
+            ->name('mermas.index');
+
+        Route::get('/mermas/crear', [MermaController::class, 'create'])
+            ->name('mermas.create');
+
+        Route::post('/mermas', [MermaController::class, 'store'])
+            ->name('mermas.store');
+    });
+
 });
