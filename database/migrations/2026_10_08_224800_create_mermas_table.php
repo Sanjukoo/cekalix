@@ -1,4 +1,3 @@
-
 <?php
 
 use Illuminate\Database\Migrations\Migration;
@@ -19,6 +18,8 @@ return new class extends Migration
             $table->unsignedInteger('cantidad');
 
             $table->string('motivo');
+
+            $table->text('descripcion')->nullable();
 
             $table->date('fecha_registro');
 

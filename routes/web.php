@@ -62,8 +62,9 @@ Route::middleware('auth')->group(function () {
             ->parameters(['importaciones' => 'importacion']);
     });
 
+    
     // Registro y consulta de mermas: admin e inventario.
-    Route::middleware('role:inventario')->group(function () {
+    Route::middleware('role:admin,inventario')->group(function () {
 
         Route::get('/mermas', [MermaController::class, 'index'])
             ->name('mermas.index');
@@ -75,4 +76,16 @@ Route::middleware('auth')->group(function () {
             ->name('mermas.store');
     });
 
+    // Edición y eliminación de mermas: solo administrador.
+    Route::middleware('role:admin')->group(function () {
+
+        Route::get('/mermas/{merma}/editar', [MermaController::class, 'edit'])
+            ->name('mermas.edit');
+
+        Route::put('/mermas/{merma}', [MermaController::class, 'update'])
+            ->name('mermas.update');
+
+        Route::delete('/mermas/{merma}', [MermaController::class, 'destroy'])
+            ->name('mermas.destroy');
+    });
 });

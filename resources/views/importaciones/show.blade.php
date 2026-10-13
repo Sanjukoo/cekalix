@@ -70,6 +70,7 @@
                                     <th>Producto</th>
                                     <th>Categoría</th>
                                     <th>Cajas Facturadas</th>
+                                    <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -78,7 +79,16 @@
                                         <td><span class="badge-sku">{{ $detalle->producto->codigo }}</span></td>
                                         <td>{{ $detalle->producto->nombre }}</td>
                                         <td>{{ $detalle->producto->categoria->nombre }}</td>
-                                        <td><strong>{{ $detalle->cajas_facturadas }}</strong></td>
+                                        <td><strong>{{ $detalle->cajas_facturadas }}</strong></td>              
+                                    <td>
+                                        @if (auth()->user()->role === 'admin')
+                                            <a
+                                                href="{{ route('mermas.create', ['importacion_detalle_id' => $detalle->id]) }}"
+                                                class="btn btn-sm btn-rojo"
+                                            > Registrar merma </a>
+                                        @endif
+                                    </td>
+
                                     </tr>
                                 @endforeach
                             </tbody>

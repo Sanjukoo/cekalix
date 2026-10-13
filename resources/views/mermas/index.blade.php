@@ -16,6 +16,14 @@
         </div>
     @endif
 
+    @if (session()->has('cajasEstables'))
+        <div class="alert alert-info">
+            <strong>Resultado:</strong>
+            {{ session('cajasEstables') }} cajas estables
+            en el detalle de importación seleccionado.
+        </div>
+    @endif
+
     <div class="card mb-4">
         <div class="card-body">
             <h5>Total de cajas dañadas registradas</h5>
@@ -35,39 +43,114 @@
                         <tr>
                             <th>Importación</th>
                             <th>Contenedor</th>
+                            <th>Código SKU</th>
                             <th>Producto</th>
+                            <th>Cajas facturadas</th>
                             <th>Cajas dañadas</th>
+                            <th>Cajas estables</th>
                             <th>Motivo</th>
+                            <th>Descripción</th>
                             <th>Fecha</th>
+
+                            @if (auth()->user()->role === 'admin')
+                                <th>Acciones</th>
+                            @endif
                         </tr>
                     </thead>
 
                     <tbody>
                         @forelse ($mermas as $merma)
+                            @php
+                                $detalle = $merma->detalleImportacion;
+
+                                $totalDanadas = $detalle
+                                    ? $detalle->mermas->sum('cantidad')
+                                    : 0;
+
+                                $cajasFacturadas = $detalle
+                                    ? $detalle->cajas_facturadas
+                                    : 0;
+
+                                $cajasEstables = max(
+                                    0,
+                                    $cajasFacturadas - $totalDanadas
+                                );
+                            @endphp
+
                             <tr>
                                 <td>
-                                    #{{ $merma->detalleImportacion->importacion->id }}
+                                    #{{ $detalle->importacion->id ?? 'N/A' }}
                                 </td>
 
                                 <td>
-                                    {{ $merma->detalleImportacion->importacion->numero_contenedor }}
+                                    {{ $detalle->importacion->numero_contenedor ?? 'N/A' }}
                                 </td>
 
                                 <td>
-                                    {{ $merma->detalleImportacion->producto->nombre }}
+                                    {{ $detalle->producto->codigo ?? 'N/A' }}
                                 </td>
+
+                                <td>
+                                    {{ $detalle->producto->nombre ?? 'N/A' }}
+                                </td>
+
+                                <td>{{ $cajasFacturadas }}</td>
 
                                 <td>{{ $merma->cantidad }}</td>
 
-                                <td>{{ $merma->motivo }}</td>
+                                <td>{{ $cajasEstables }}</td>
+
+                                <td>
+                                    {{ $merma->motivo === 'OTRO' ? 'Otro' : $merma->motivo }}
+                                </td>
+
+                                <td>
+                                    @if ($merma->motivo === 'OTRO')
+                                        {{ $merma->descripcion ?? 'Sin descripción' }}
+                                    @else
+                                        —
+                                    @endif
+                                </td>
 
                                 <td>
                                     {{ $merma->fecha_registro->format('d/m/Y') }}
                                 </td>
+
+                                @if (auth()->user()->role === 'admin')
+                                    <td>
+                                        <div class="d-flex gap-2">
+                                            <a
+                                                href="{{ route('mermas.edit', $merma) }}"
+                                                class="btn btn-sm btn-primary"
+                                            >
+                                                Editar
+                                            </a>
+
+                                            <form
+                                                action="{{ route('mermas.destroy', $merma) }}"
+                                                method="POST"
+                                                onsubmit="return confirm('¿Seguro que deseas eliminar esta merma?');"
+                                            >
+                                                @csrf
+                                                @method('DELETE')
+
+                                                <button
+                                                    type="submit"
+                                                    class="btn btn-sm btn-danger"
+                                                >
+                                                    Eliminar
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                @endif
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center">
+                                <td
+                                    colspan="{{ auth()->user()->role === 'admin' ? 11 : 10 }}"
+                                    class="text-center"
+                                >
                                     Todavía no hay mermas registradas.
                                 </td>
                             </tr>

@@ -12,6 +12,7 @@ class Merma extends Model
         'importacion_detalle_id',
         'cantidad',
         'motivo',
+        'descripcion',
         'fecha_registro',
     ];
 
