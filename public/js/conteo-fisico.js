@@ -22,7 +22,7 @@ if (typeof document !== 'undefined') {
         const input = fila.querySelector('input');
         const output = fila.querySelector('[data-conteo-diferencia]');
         const actualizar = () => {
-            // Algunos navegadores exponen como vacío un número incompleto o inválido.
+            
             const resultado = input.validity.badInput
                 ? { texto: 'Cantidad inválida', color: 'danger' }
                 : calcularDiferencia(input.value, Number(fila.dataset.facturadas));
