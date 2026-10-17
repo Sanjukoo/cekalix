@@ -25,39 +25,6 @@
                     class="login-logo"
                 >
 
-                <p class="system-label">
-                    SISTEMA EMPRESARIAL
-                </p>
-
-                <h1 class="login-title">
-                    Sistema de
-                    <span>Inventario y Ventas</span>
-                </h1>
-
-                <p class="login-description">
-                    Gestiona productos, inventario, importaciones
-                    y ventas B2B desde una sola plataforma.
-                </p>
-
-                <div class="login-features">
-
-                    <div class="login-feature">
-                        <div class="feature-icon">✓</div>
-                        <span>Control de inventario y productos</span>
-                    </div>
-
-                    <div class="login-feature">
-                        <div class="feature-icon">✓</div>
-                        <span>Gestión de importaciones</span>
-                    </div>
-
-                    <div class="login-feature">
-                        <div class="feature-icon">✓</div>
-                        <span>Ventas empresariales B2B</span>
-                    </div>
-
-                </div>
-
             </div>
 
         </div>
