@@ -81,7 +81,7 @@ class ImportacionController extends Controller
 
     public function show(Importacion $importacion)
     {
-        $importacion->load('proveedor', 'detalles.producto.categoria');
+        $importacion->load('proveedor', 'detalles.producto.categoria', 'detalles.conteoFisico');
         return view('importaciones.show', compact('importacion'));
     }
 }

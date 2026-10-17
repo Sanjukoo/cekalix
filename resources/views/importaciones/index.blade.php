@@ -8,9 +8,11 @@
         <h2 class="page-title">Importaciones Registradas</h2>
     </div>
     <div class="col-md-4 text-end">
+        @if(auth()->user()->role === 'admin')
         <a href="{{ route('importaciones.create') }}" class="btn btn-rojo">
             Nueva Importación
         </a>
+        @endif
     </div>
 </div>
 
@@ -55,7 +57,7 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <a href="{{ route('importaciones.show', $importacion) }}" class="btn btn-sm btn-outline-dark" title="Ver">Ver</a>
+                                        <a href="{{ route('importaciones.show', $importacion) }}" class="btn btn-sm btn-outline-dark">Ver conteo</a>
                                     </td>
                                 </tr>
                             @endforeach

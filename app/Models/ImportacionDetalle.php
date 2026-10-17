@@ -27,6 +27,11 @@ class ImportacionDetalle extends Model
     {
         return $this->belongsTo(Producto::class);
     }
+
+    public function conteoFisico()
+    {
+        return $this->hasOne(ConteoFisico::class);
+    }
         public function mermas()
     {
         return $this->hasMany(

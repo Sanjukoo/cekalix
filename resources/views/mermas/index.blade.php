@@ -118,7 +118,7 @@
 
                                 @if (auth()->user()->role === 'admin')
                                     <td>
-                                        <div class="d-flex gap-2">
+                                        <div class="acciones-tabla">
                                             <a
                                                 href="{{ route('mermas.edit', $merma) }}"
                                                 class="btn btn-sm btn-primary"

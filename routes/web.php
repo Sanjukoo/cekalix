@@ -7,6 +7,7 @@ use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\ImportacionController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\MermaController;
+use App\Http\Controllers\ConteoFisicoController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -50,7 +51,7 @@ Route::middleware('auth')->group(function () {
         ->middleware('role:admin,inventario,ventas')
         ->name('productos.listar-ajax');
 
-    // Proveedores e importaciones: solo administrador.
+    // Proveedores y apertura de importaciones: solo administrador.
     Route::middleware('role:admin')->group(function () {
 
         Route::resource('proveedores', ProveedorController::class)
@@ -58,8 +59,18 @@ Route::middleware('auth')->group(function () {
             ->parameters(['proveedores' => 'proveedor']);
 
         Route::resource('importaciones', ImportacionController::class)
-            ->only(['index', 'create', 'store', 'show'])
+            ->only(['create', 'store'])
             ->parameters(['importaciones' => 'importacion']);
+    });
+
+    // Consulta de importaciones y conteo físico durante la descarga.
+    Route::middleware('role:admin,inventario')->group(function () {
+        Route::resource('importaciones', ImportacionController::class)
+            ->only(['index', 'show'])
+            ->parameters(['importaciones' => 'importacion']);
+
+        Route::patch('/importaciones/{importacion}/conteo', [ConteoFisicoController::class, 'update'])
+            ->name('importaciones.conteo.update');
     });
 
     

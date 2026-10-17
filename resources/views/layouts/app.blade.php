@@ -62,6 +62,9 @@
                                 Proveedores
                             </a>
 
+                        @endif
+
+                        @if(in_array(auth()->user()->role, ['admin', 'inventario'], true))
                             <a href="{{ route('importaciones.index') }}"
                                class="{{ request()->routeIs('importaciones.*') ? 'active' : '' }}">
                                 Importaciones

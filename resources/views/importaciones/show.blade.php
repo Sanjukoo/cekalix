@@ -58,47 +58,6 @@
             </div>
         </div>
 
-        <div class="card card-custom">
-            <div class="card-header">Detalle de Mercadería</div>
-            <div class="card-body">
-                @if($importacion->detalles->count() > 0)
-                    <div class="table-responsive">
-                        <table class="table table-striped align-middle">
-                            <thead>
-                                <tr>
-                                    <th>SKU</th>
-                                    <th>Producto</th>
-                                    <th>Categoría</th>
-                                    <th>Cajas Facturadas</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($importacion->detalles as $detalle)
-                                    <tr>
-                                        <td><span class="badge-sku">{{ $detalle->producto->codigo }}</span></td>
-                                        <td>{{ $detalle->producto->nombre }}</td>
-                                        <td>{{ $detalle->producto->categoria->nombre }}</td>
-                                        <td><strong>{{ $detalle->cajas_facturadas }}</strong></td>              
-                                    <td>
-                                        @if (auth()->user()->role === 'admin')
-                                            <a
-                                                href="{{ route('mermas.create', ['importacion_detalle_id' => $detalle->id]) }}"
-                                                class="btn btn-sm btn-rojo"
-                                            > Registrar merma </a>
-                                        @endif
-                                    </td>
-
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                @else
-                    <p class="text-center text-muted">Sin detalle de mercadería.</p>
-                @endif
-            </div>
-        </div>
     </div>
 
     <div class="col-md-4">
@@ -111,4 +70,9 @@
         </div>
     </div>
 </div>
+@include('importaciones._conteo')
+@endsection
+
+@section('scripts')
+<script type="module" src="{{ asset('js/conteo-fisico.js') }}?v={{ filemtime(public_path('js/conteo-fisico.js')) }}"></script>
 @endsection

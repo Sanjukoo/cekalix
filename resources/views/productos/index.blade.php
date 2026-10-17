@@ -78,15 +78,17 @@
                                 </td>
                                 <td>{{ $producto->unidades_por_caja }}</td>
                                 <td>
-                                    <a href="{{ route('productos.show', $producto) }}" class="btn btn-sm btn-outline-dark" title="Ver">Ver</a>
-                                    @if(auth()->user()->puedeGestionarProductos())
-                                        <a href="{{ route('productos.edit', $producto) }}" class="btn btn-sm btn-negro" title="Editar">Editar</a>
-                                        <form action="{{ route('productos.destroy', $producto) }}" method="POST" style="display:inline;">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-outline-rojo" onclick="return confirm('¿Está seguro?')" title="Eliminar">Eliminar</button>
-                                        </form>
-                                    @endif
+                                    <div class="acciones-tabla">
+                                        <a href="{{ route('productos.show', $producto) }}" class="btn btn-sm btn-outline-dark" title="Ver">Ver</a>
+                                        @if(auth()->user()->puedeGestionarProductos())
+                                            <a href="{{ route('productos.edit', $producto) }}" class="btn btn-sm btn-negro" title="Editar">Editar</a>
+                                            <form action="{{ route('productos.destroy', $producto) }}" method="POST">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-outline-rojo" onclick="return confirm('¿Está seguro?')" title="Eliminar">Eliminar</button>
+                                            </form>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach

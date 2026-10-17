@@ -50,12 +50,14 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <a href="{{ route('proveedores.edit', $proveedor) }}" class="btn btn-sm btn-negro" title="Editar">Editar</a>
-                                    <form action="{{ route('proveedores.destroy', $proveedor) }}" method="POST" style="display:inline;">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-outline-rojo" onclick="return confirm('¿Está seguro?')" title="Eliminar">Eliminar</button>
-                                    </form>
+                                    <div class="acciones-tabla">
+                                        <a href="{{ route('proveedores.edit', $proveedor) }}" class="btn btn-sm btn-negro" title="Editar">Editar</a>
+                                        <form action="{{ route('proveedores.destroy', $proveedor) }}" method="POST">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-outline-rojo" onclick="return confirm('¿Está seguro?')" title="Eliminar">Eliminar</button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach

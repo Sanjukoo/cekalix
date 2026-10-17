@@ -170,3 +170,33 @@ Solución: Ejecuta composer dump-autoload
 ## Soporte
 
 Para más información sobre Laravel, visita: https://laravel.com/docs
+
+
+## Conteo físico en descarga
+
+El administrador y el encargado de inventario pueden abrir **Importaciones → Ver conteo** para registrar las cajas recibidas de cada SKU. La pantalla compara las cajas facturadas con las contadas y calcula la diferencia automáticamente: un faltante aparece en rojo, un sobrante en amarillo y una coincidencia en verde.
+
+Los conteos se guardan por producto e importación. Deben completarse todos los SKU con enteros no negativos; cero indica que no llegó ninguna caja. Mientras la importación esté «En recepción», se puede corregir el conteo. El registro del conteo no modifica el stock.
+
+Para actualizar una instalación existente, después de descargar los cambios:
+
+```bash
+composer install
+npm ci
+npm run build
+php artisan migrate
+```
+
+Para cargar un catálogo de ocho productos y tres importaciones con datos de ejemplo:
+
+```bash
+php artisan db:seed --class=ImportacionSeeder
+```
+
+Las facturas `JH-2026-1048` y `GT-2026-1053` incluyen conteos registrados. La factura `PI-2026-0876` queda pendiente de conteo. Ejecutar el cargador otra vez conserva los conteos existentes y evita duplicar los registros.
+
+Las comprobaciones del cálculo en pantalla pueden ejecutarse con:
+
+```bash
+node --test tests/js/conteo-fisico.test.mjs
+```
