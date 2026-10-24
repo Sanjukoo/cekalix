@@ -7,11 +7,12 @@
     <div class="col-md-8">
         <h2 class="page-title">Importaciones Registradas</h2>
     </div>
+
     <div class="col-md-4 text-end">
         @if(auth()->user()->role === 'admin')
-        <a href="{{ route('importaciones.create') }}" class="btn btn-rojo">
-            Nueva Importación
-        </a>
+            <a href="{{ route('importaciones.create') }}" class="btn btn-rojo">
+                Nueva Importación
+            </a>
         @endif
     </div>
 </div>
@@ -33,31 +34,69 @@
                             <th>Acciones</th>
                         </tr>
                     </thead>
+
                     <tbody>
                         @foreach($importaciones as $importacion)
                             @foreach($importacion->detalles as $detalle)
                                 <tr>
-                                    <td><strong>#{{ $importacion->id }}</strong></td>
-                                    <td>{{ $importacion->proveedor->razon_social }}</td>
                                     <td>
-                                        <small class="d-block">Fac: {{ $importacion->numero_factura }}</small>
-                                        <small class="text-muted">Cont: {{ $importacion->numero_contenedor }}</small>
+                                        <strong>#{{ $importacion->id }}</strong>
                                     </td>
-                                    <td>{{ $importacion->fecha_llegada->format('d/m/Y') }}</td>
+
                                     <td>
-                                        <span class="badge-sku">{{ $detalle->producto->codigo }}</span>
-                                        <small class="d-block">{{ $detalle->producto->nombre }}</small>
+                                        {{ $importacion->proveedor->razon_social }}
                                     </td>
-                                    <td><strong>{{ $detalle->cajas_facturadas }}</strong></td>
+
                                     <td>
-                                        @if($importacion->estado === 'En recepción')
-                                            <span class="badge badge-estado en-recepcion">{{ $importacion->estado }}</span>
+                                        <small class="d-block">
+                                            Fac: {{ $importacion->numero_factura }}
+                                        </small>
+                                        <small class="text-muted">
+                                            Cont: {{ $importacion->numero_contenedor }}
+                                        </small>
+                                    </td>
+
+                                    <td>
+                                        {{ $importacion->fecha_llegada->format('d/m/Y') }}
+                                    </td>
+
+                                    <td>
+                                        <span class="badge-sku">
+                                            {{ $detalle->producto_codigo ?? $detalle->producto?->codigo ?? 'Sin SKU' }}
+                                        </span>
+
+                                        @if($detalle->producto)
+                                            <small class="d-block">
+                                                {{ $detalle->producto->nombre }}
+                                            </small>
                                         @else
-                                            <span class="badge badge-estado procesada">{{ $importacion->estado }}</span>
+                                            <small class="d-block text-warning">
+                                                Pendiente de registro en Inventario
+                                            </small>
                                         @endif
                                     </td>
+
                                     <td>
-                                        <a href="{{ route('importaciones.show', $importacion) }}" class="btn btn-sm btn-outline-dark">Ver conteo</a>
+                                        <strong>{{ $detalle->cajas_facturadas }}</strong>
+                                    </td>
+
+                                    <td>
+                                        @if($importacion->estado === 'En recepción')
+                                            <span class="badge badge-estado en-recepcion">
+                                                {{ $importacion->estado }}
+                                            </span>
+                                        @else
+                                            <span class="badge badge-estado procesada">
+                                                {{ $importacion->estado }}
+                                            </span>
+                                        @endif
+                                    </td>
+
+                                    <td>
+                                        <a href="{{ route('importaciones.show', $importacion) }}"
+                                           class="btn btn-sm btn-outline-dark">
+                                            Ver conteo
+                                        </a>
                                     </td>
                                 </tr>
                             @endforeach
@@ -70,7 +109,9 @@
                 {{ $importaciones->links() }}
             </div>
         @else
-            <p class="text-center text-muted py-4">No hay importaciones registradas.</p>
+            <p class="text-center text-muted py-4">
+                No hay importaciones registradas.
+            </p>
         @endif
     </div>
 </div>

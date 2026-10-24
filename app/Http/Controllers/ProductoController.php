@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Producto;
+use App\Models\ImportacionDetalle;
 use App\Models\Categoria;
 use App\Models\AtributoProducto;
 use App\Models\Proveedor;
@@ -33,36 +34,109 @@ class ProductoController extends Controller
 
         return view('productos.index', compact('productos', 'buscar'));
     }
+    
     public function create()
-    {
-        $categorias = Categoria::with('atributos')
-            ->orderBy('nombre')
-            ->get();
-        $proveedores = Proveedor::activos()->orderBy('razon_social')->get();
-        return view('productos.create', compact('categorias', 'proveedores'));
-    }
+   {
+       $categorias = Categoria::with('atributos')
+           ->orderBy('nombre')
+           ->get();
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'codigo' => 'required|string|unique:productos,codigo|max:50',
-            'nombre' => 'required|string|max:100',
-            'categoria_id' => 'required|exists:categorias,id',
-            'proveedor_id' => 'required|exists:proveedores,id',
-            'stock' => 'required|integer|min:0',
-            'unidades_por_caja' => 'required|integer|min:1',
-            'descripcion' => 'nullable|string',
-        ]);
+       $detallesPendientes = ImportacionDetalle::with([
+           'importacion.proveedor',
+           'producto.categoria',
+           'producto.atributos',
+       ])
+           ->whereNotNull('producto_codigo')
+           ->whereHas('importacion', function ($query) {
+               $query->where('estado', 'En recepción');
+           })
+           ->where(function ($query) {
+               $query->whereNull('producto_id')
+                   ->orWhereNotNull('producto_id');
+           })
+           ->orderByDesc('id')
+           ->get();
 
-        DB::transaction(function () use ($request, $validated) {
-            $producto = Producto::create($validated);
-            $this->guardarAtributos($request, $producto);
-        });
+        return view('productos.create', compact(
+          'categorias',
+          'detallesPendientes'
+       ));
+   }
 
-        return redirect()
-            ->route('productos.index')
-            ->with('success', 'Producto registrado correctamente.');
-    }
+    
+   public function store(Request $request)
+   {
+       $validated = $request->validate([
+           'importacion_detalle_id' => 'required|integer|exists:importacion_detalles,id',
+           'nombre' => 'required|string|max:100',
+           'categoria_id' => 'required|exists:categorias,id',
+           'stock' => 'required|integer|min:0',
+           'unidades_por_caja' => 'required|integer|min:1',
+           'descripcion' => 'nullable|string',
+       ]);
+
+       DB::transaction(function () use ($request, $validated) {
+           $detalle = ImportacionDetalle::with('importacion')
+               ->whereKey($validated['importacion_detalle_id'])
+               ->lockForUpdate()
+               ->firstOrFail();
+
+           if ($detalle->importacion->estado !== 'En recepción') {
+               throw \Illuminate\Validation\ValidationException::withMessages([
+                   'importacion_detalle_id' =>
+                      'La importación ya no está pendiente de recepción.',
+               ]);
+           }
+
+           $codigo = trim($detalle->producto_codigo);
+
+        // Buscar el producto vinculado o uno que ya exista con el mismo SKU.
+           $producto = $detalle->producto_id
+               ? Producto::whereKey($detalle->producto_id)->lockForUpdate()->first()
+               : Producto::where('codigo', $codigo)->lockForUpdate()->first();
+
+           if ($producto) {
+            // Reutilizar el producto existente y conservar su stock.
+               $producto->update([
+                   'nombre' => $validated['nombre'],
+                   'categoria_id' => $validated['categoria_id'],
+                   'unidades_por_caja' => $validated['unidades_por_caja'],
+                   'descripcion' => $validated['descripcion'] ?? null,
+              ]);
+
+               $detalle->producto_id = $producto->id;
+               $detalle->save();
+           } else {
+            // Crear un producto únicamente si el SKU todavía no existe.
+               $producto = Producto::create([
+                   'codigo' => $codigo,
+                   'nombre' => $validated['nombre'],
+                   'categoria_id' => $validated['categoria_id'],
+                   'proveedor_id' => $detalle->importacion->proveedor_id,
+                   'stock' => $validated['stock'],
+                   'unidades_por_caja' => $validated['unidades_por_caja'],
+                   'descripcion' => $validated['descripcion'] ?? null,
+               ]);
+
+               $detalle->producto_id = $producto->id;
+               $detalle->save();
+        }
+
+        // Vincular otros detalles pendientes del mismo SKU.
+        ImportacionDetalle::whereNull('producto_id')
+            ->where('producto_codigo', $codigo)
+            ->update(['producto_id' => $producto->id]);
+
+        // Guardar o actualizar los atributos sin duplicar sus claves.
+        $this->guardarAtributos($request, $producto);
+    });
+
+    return redirect()
+        ->route('productos.index')
+        ->with('success', 'Producto registrado o actualizado correctamente.');
+   }
+
+
 
     public function show(Producto $producto)
     {
@@ -118,22 +192,23 @@ class ProductoController extends Controller
     }
 
     // Guarda los atributos que define la categoría del producto
-    private function guardarAtributos(Request $request, Producto $producto): void
-    {
-        $categoria = Categoria::with('atributos')->find($producto->categoria_id);
+    
+   private function guardarAtributos(Request $request, Producto $producto): void
+  {
+       $categoria = Categoria::with('atributos')
+           ->find($producto->categoria_id);
 
-        foreach ($categoria->atributos as $atributo) {
-            $campo = Str::slug($atributo->nombre);
-            $valor = $request->input("atributo_$campo");
+       foreach ($categoria->atributos as $atributo) {
+           $campo = Str::slug($atributo->nombre);
+           $valor = $request->input("atributo_$campo");
 
-            if ($valor !== null && $valor !== '') {
-                AtributoProducto::create([
-                    'producto_id' => $producto->id,
-                    'clave' => $campo,
-                    'valor' => $valor,
-                ]);
-            }
-        }
+           if ($valor !== null && $valor !== '') {
+               $producto->atributos()->updateOrCreate(
+                   ['clave' => $campo],
+                   ['valor' => $valor]
+              );
+           }
+       }
     }
 
     public function listarAjax()

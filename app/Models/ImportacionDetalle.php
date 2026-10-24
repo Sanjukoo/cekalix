@@ -11,10 +11,12 @@ class ImportacionDetalle extends Model
     protected $fillable = [
         'importacion_id',
         'producto_id',
+        'producto_codigo',
         'cajas_facturadas',
     ];
 
     protected $casts = [
+        'producto_id' => 'integer',
         'cajas_facturadas' => 'integer',
     ];
 
@@ -32,11 +34,9 @@ class ImportacionDetalle extends Model
     {
         return $this->hasOne(ConteoFisico::class);
     }
-        public function mermas()
+
+    public function mermas()
     {
-        return $this->hasMany(
-            Merma::class,
-            'importacion_detalle_id'
-        );
+        return $this->hasMany(Merma::class, 'importacion_detalle_id');
     }
 }
