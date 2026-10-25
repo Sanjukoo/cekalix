@@ -205,21 +205,29 @@ class ConteoFisicoTest extends TestCase
 
     public function test_las_importaciones_se_cargan_sin_duplicados_ni_reemplazar_conteos(): void
     {
-        $this->seed(\Database\Seeders\ImportacionSeeder::class);
-        $this->assertDatabaseCount('productos', 8);
-        $this->assertDatabaseCount('importaciones', 3);
-        $this->assertDatabaseCount('importacion_detalles', 8);
-        $this->assertDatabaseCount('conteos_fisicos', 6);
+        $this->seed();
+        $this->assertDatabaseCount('productos', 10);
+        $this->assertDatabaseCount('importaciones', 4);
+        $this->assertDatabaseCount('importacion_detalles', 11);
+        $this->assertDatabaseCount('conteos_fisicos', 8);
+        $this->assertDatabaseCount('mermas', 4);
+        $this->assertSame(2, Importacion::where('estado', 'Procesada')->count());
+        // Solo las importaciones cerradas suman stock: (118 - 3) cajas × 15 unidades.
+        $this->assertSame(1725, Producto::where('codigo', 'COR-TE45-400')->value('stock'));
+        $this->assertSame(0, Producto::where('codigo', 'COR-TE45-500')->value('stock'));
+        $this->assertDatabaseHas('importacion_detalles', ['producto_codigo' => 'COR-OC-350', 'producto_id' => null]);
 
         $conteo = ConteoFisico::firstOrFail();
         $conteo->update(['cajas_contadas' => 77, 'diferencia' => 77 - $conteo->detalle->cajas_facturadas]);
-        $this->seed(\Database\Seeders\ImportacionSeeder::class);
+        $this->seed();
 
-        $this->assertDatabaseCount('productos', 8);
-        $this->assertDatabaseCount('importaciones', 3);
-        $this->assertDatabaseCount('importacion_detalles', 8);
-        $this->assertDatabaseCount('conteos_fisicos', 6);
+        $this->assertDatabaseCount('productos', 10);
+        $this->assertDatabaseCount('importaciones', 4);
+        $this->assertDatabaseCount('importacion_detalles', 11);
+        $this->assertDatabaseCount('conteos_fisicos', 8);
+        $this->assertDatabaseCount('mermas', 4);
         $this->assertSame(77, $conteo->fresh()->cajas_contadas);
+        $this->assertSame(1725, Producto::where('codigo', 'COR-TE45-400')->value('stock'));
     }
 
 }

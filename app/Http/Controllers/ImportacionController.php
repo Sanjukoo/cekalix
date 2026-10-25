@@ -8,6 +8,7 @@ use App\Models\Producto;
 use App\Models\ImportacionDetalle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class ImportacionController extends Controller
 {
@@ -129,7 +130,54 @@ class ImportacionController extends Controller
 
     public function show(Importacion $importacion)
     {
-        $importacion->load('proveedor', 'detalles.producto.categoria', 'detalles.conteoFisico');
+        $importacion->load('proveedor', 'detalles.producto.categoria', 'detalles.conteoFisico', 'detalles.mermas');
         return view('importaciones.show', compact('importacion'));
+    }
+
+    // Cierra la recepción: lo que llegó en buen estado pasa al stock.
+    public function cerrar(Importacion $importacion)
+    {
+        DB::transaction(function () use ($importacion) {
+            $importacion = Importacion::whereKey($importacion->id)->lockForUpdate()->firstOrFail();
+
+            if ($importacion->estado !== 'En recepción') {
+                throw ValidationException::withMessages([
+                    'cierre' => 'Esta importación ya fue cerrada.',
+                ]);
+            }
+
+            $detalles = $importacion->detalles()
+                ->with('conteoFisico')
+                ->withSum('mermas', 'cantidad')
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($detalles as $detalle) {
+                if (!$detalle->conteoFisico) {
+                    throw ValidationException::withMessages([
+                        'cierre' => 'Registra el conteo físico de todos los SKU antes de cerrar la recepción.',
+                    ]);
+                }
+
+                if (!$detalle->producto_id) {
+                    throw ValidationException::withMessages([
+                        'cierre' => "El SKU {$detalle->producto_codigo} aún no está registrado como producto en Inventario.",
+                    ]);
+                }
+            }
+
+            foreach ($detalles as $detalle) {
+                // Cajas en buen estado = contadas - dañadas; el stock se lleva en unidades.
+                $cajasBuenas = $detalle->conteoFisico->cajas_contadas - (int) $detalle->mermas_sum_cantidad;
+
+                $producto = Producto::whereKey($detalle->producto_id)->lockForUpdate()->firstOrFail();
+                $producto->increment('stock', max(0, $cajasBuenas) * $producto->unidades_por_caja);
+            }
+
+            $importacion->update(['estado' => 'Procesada']);
+        });
+
+        return redirect()->route('importaciones.show', $importacion)
+            ->with('success', 'Recepción cerrada. El stock de los productos fue actualizado.');
     }
 }

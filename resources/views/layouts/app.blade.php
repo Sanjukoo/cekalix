@@ -71,7 +71,7 @@
                             </a>
                         @endif
 
-                        @if(auth()->user()->role === 'inventario')
+                        @if(in_array(auth()->user()->role, ['admin', 'inventario'], true))
                             <a href="{{ route('mermas.index') }}"
                                class="{{ request()->routeIs('mermas.*') ? 'active' : '' }}">
                                 Mermas

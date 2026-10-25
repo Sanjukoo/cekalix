@@ -46,6 +46,7 @@
                             <th>Código SKU</th>
                             <th>Producto</th>
                             <th>Cajas facturadas</th>
+                            <th>Cajas recibidas</th>
                             <th>Cajas dañadas</th>
                             <th>Cajas estables</th>
                             <th>Motivo</th>
@@ -71,10 +72,14 @@
                                     ? $detalle->cajas_facturadas
                                     : 0;
 
+                                $cajasRecibidas = $detalle?->conteoFisico?->cajas_contadas;
+
                                 $cajasEstables = max(
                                     0,
-                                    $cajasFacturadas - $totalDanadas
+                                    ($cajasRecibidas ?? 0) - $totalDanadas
                                 );
+
+                                $editable = $detalle?->importacion?->estado === 'En recepción';
                             @endphp
 
                             <tr>
@@ -87,14 +92,16 @@
                                 </td>
 
                                 <td>
-                                    {{ $detalle->producto->codigo ?? 'N/A' }}
+                                    {{ $detalle->producto_codigo ?? $detalle->producto?->codigo ?? 'N/A' }}
                                 </td>
 
                                 <td>
-                                    {{ $detalle->producto->nombre ?? 'N/A' }}
+                                    {{ $detalle->producto?->nombre ?? 'Pendiente de registro' }}
                                 </td>
 
                                 <td>{{ $cajasFacturadas }}</td>
+
+                                <td>{{ $cajasRecibidas ?? 'Sin contar' }}</td>
 
                                 <td>{{ $merma->cantidad }}</td>
 
@@ -118,6 +125,9 @@
 
                                 @if (auth()->user()->role === 'admin')
                                     <td>
+                                        @if (!$editable)
+                                            <span class="text-muted small">Importación cerrada</span>
+                                        @else
                                         <div class="acciones-tabla">
                                             <a
                                                 href="{{ route('mermas.edit', $merma) }}"
@@ -142,13 +152,14 @@
                                                 </button>
                                             </form>
                                         </div>
+                                        @endif
                                     </td>
                                 @endif
                             </tr>
                         @empty
                             <tr>
                                 <td
-                                    colspan="{{ auth()->user()->role === 'admin' ? 11 : 10 }}"
+                                    colspan="{{ auth()->user()->role === 'admin' ? 12 : 11 }}"
                                     class="text-center"
                                 >
                                     Todavía no hay mermas registradas.

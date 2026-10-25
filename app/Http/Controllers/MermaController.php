@@ -16,6 +16,7 @@ class MermaController extends Controller
         $mermas = Merma::with(
             'detalleImportacion.importacion.proveedor',
             'detalleImportacion.producto',
+            'detalleImportacion.conteoFisico',
             'detalleImportacion.mermas'
         )
             ->orderBy('id', 'desc')
@@ -31,13 +32,7 @@ class MermaController extends Controller
 
     public function create()
     {
-        $importaciones = Importacion::with(
-            'proveedor',
-            'detalles.producto',
-            'detalles.mermas'
-        )
-            ->orderBy('id', 'desc')
-            ->get();
+        $importaciones = $this->importacionesEnRecepcion();
 
         return view('mermas.create', compact('importaciones'));
     }
@@ -45,59 +40,31 @@ class MermaController extends Controller
     // Registrar una nueva merma.
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'importacion_detalle_id' => [
-                'required',
-                'exists:importacion_detalles,id',
-            ],
-            'cantidad' => [
-                'required',
-                'integer',
-                'min:1',
-            ],
-            'motivo' => [
-                'required',
-                'string',
-                'max:255',
-            ],
-            'descripcion' => [
-                'nullable',
-                'required_if:motivo,OTRO',
-                'string',
-                'max:1000',
-            ],
-            'fecha_registro' => [
-                'required',
-                'date',
-            ],
-        ]);
-
-        if ($validated['motivo'] !== 'OTRO') {
-            $validated['descripcion'] = null;
-        }
+        $validated = $this->validar($request);
 
         $resultado = DB::transaction(function () use ($validated) {
-            $detalle = ImportacionDetalle::whereKey(
-                $validated['importacion_detalle_id']
-            )
-                ->lockForUpdate()
-                ->firstOrFail();
+            $detalle = $this->bloquearDetalle($validated['importacion_detalle_id']);
+
+            if ($error = $this->errorDeDetalle($detalle)) {
+                return ['error' => $error];
+            }
 
             $totalRegistrado = $detalle->mermas()->sum('cantidad');
 
             $totalNuevo = $totalRegistrado + $validated['cantidad'];
 
-            if ($totalNuevo > $detalle->cajas_facturadas) {
+            $cajasRecibidas = $detalle->conteoFisico->cajas_contadas;
+
+            if ($totalNuevo > $cajasRecibidas) {
                 return [
-                    'error' => 'La cantidad dañada supera las cajas facturadas de esta importación.',
+                    'error' => 'La cantidad dañada supera las cajas recibidas en el conteo físico de este SKU.',
                 ];
             }
 
             Merma::create($validated);
 
             return [
-                'cajasEstables' =>
-                    $detalle->cajas_facturadas - $totalNuevo,
+                'cajasEstables' => $cajasRecibidas - $totalNuevo,
             ];
         });
 
@@ -118,15 +85,15 @@ class MermaController extends Controller
     // Mostrar el formulario de edición.
     public function edit(Merma $merma)
     {
-        $merma->load('detalleImportacion');
+        $merma->load('detalleImportacion.importacion');
 
-        $importaciones = Importacion::with(
-            'proveedor',
-            'detalles.producto',
-            'detalles.mermas'
-        )
-            ->orderBy('id', 'desc')
-            ->get();
+        if ($merma->detalleImportacion->importacion->estado !== 'En recepción') {
+            return redirect()
+                ->route('mermas.index')
+                ->with('error', 'No se puede editar una merma de una importación cerrada.');
+        }
+
+        $importaciones = $this->importacionesEnRecepcion();
 
         return view('mermas.edit', compact(
             'merma',
@@ -137,47 +104,27 @@ class MermaController extends Controller
     // Actualizar una merma existente.
     public function update(Request $request, Merma $merma)
     {
-        $validated = $request->validate([
-            'importacion_detalle_id' => [
-                'required',
-                'exists:importacion_detalles,id',
-            ],
-            'cantidad' => [
-                'required',
-                'integer',
-                'min:1',
-            ],
-            'motivo' => [
-                'required',
-                'string',
-                'max:255',
-            ],
-            'descripcion' => [
-                'nullable',
-                'required_if:motivo,OTRO',
-                'string',
-                'max:1000',
-            ],
-            'fecha_registro' => [
-                'required',
-                'date',
-            ],
-        ]);
-
-        if ($validated['motivo'] !== 'OTRO') {
-            $validated['descripcion'] = null;
-        }
+        $validated = $this->validar($request);
 
         $resultado = DB::transaction(function () use ($validated, $merma) {
             $mermaActual = Merma::whereKey($merma->id)
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $detalle = ImportacionDetalle::whereKey(
-                $validated['importacion_detalle_id']
-            )
-                ->lockForUpdate()
-                ->firstOrFail();
+            // La importación de origen tampoco puede estar cerrada.
+            $detalleAnterior = $this->bloquearDetalle($mermaActual->importacion_detalle_id);
+
+            if ($detalleAnterior->importacion->estado !== 'En recepción') {
+                return [
+                    'error' => 'No se puede modificar una merma de una importación cerrada.',
+                ];
+            }
+
+            $detalle = $this->bloquearDetalle($validated['importacion_detalle_id']);
+
+            if ($error = $this->errorDeDetalle($detalle)) {
+                return ['error' => $error];
+            }
 
             // Excluir la merma actual para no contarla dos veces.
             $otrasMermas = $detalle->mermas()
@@ -186,17 +133,18 @@ class MermaController extends Controller
 
             $totalNuevo = $otrasMermas + $validated['cantidad'];
 
-            if ($totalNuevo > $detalle->cajas_facturadas) {
+            $cajasRecibidas = $detalle->conteoFisico->cajas_contadas;
+
+            if ($totalNuevo > $cajasRecibidas) {
                 return [
-                    'error' => 'La cantidad dañada supera las cajas facturadas de esta importación.',
+                    'error' => 'La cantidad dañada supera las cajas recibidas en el conteo físico de este SKU.',
                 ];
             }
 
             $mermaActual->update($validated);
 
             return [
-                'cajasEstables' =>
-                    $detalle->cajas_facturadas - $totalNuevo,
+                'cajasEstables' => $cajasRecibidas - $totalNuevo,
             ];
         });
 
@@ -222,25 +170,115 @@ class MermaController extends Controller
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $detalle = ImportacionDetalle::whereKey(
-                $mermaActual->importacion_detalle_id
-            )
-                ->lockForUpdate()
-                ->firstOrFail();
+            $detalle = $this->bloquearDetalle($mermaActual->importacion_detalle_id);
+
+            if ($detalle->importacion->estado !== 'En recepción') {
+                return [
+                    'error' => 'No se puede eliminar una merma de una importación cerrada.',
+                ];
+            }
 
             $mermaActual->delete();
 
             $totalDanadas = $detalle->mermas()->sum('cantidad');
 
-            return max(
-                0,
-                $detalle->cajas_facturadas - $totalDanadas
-            );
+            return [
+                'cajasEstables' => max(
+                    0,
+                    ($detalle->conteoFisico?->cajas_contadas ?? 0) - $totalDanadas
+                ),
+            ];
         });
+
+        if (isset($resultado['error'])) {
+            return redirect()
+                ->route('mermas.index')
+                ->with('error', $resultado['error']);
+        }
 
         return redirect()
             ->route('mermas.index')
             ->with('success', 'Merma eliminada correctamente.')
-            ->with('cajasEstables', $resultado);
+            ->with('cajasEstables', $resultado['cajasEstables']);
+    }
+
+    private function validar(Request $request): array
+    {
+        $validated = $request->validate([
+            'importacion_detalle_id' => [
+                'required',
+                'exists:importacion_detalles,id',
+            ],
+            'cantidad' => [
+                'required',
+                'integer',
+                'min:1',
+            ],
+            'motivo' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+            'descripcion' => [
+                'nullable',
+                'required_if:motivo,OTRO',
+                'string',
+                'max:1000',
+            ],
+            'fecha_registro' => [
+                'required',
+                'date',
+            ],
+        ]);
+
+        if ($validated['motivo'] !== 'OTRO') {
+            $validated['descripcion'] = null;
+        }
+
+        return $validated;
+    }
+
+    // Solo se registran mermas de SKU ya contados en importaciones abiertas.
+    private function importacionesEnRecepcion()
+    {
+        return Importacion::with(
+            'proveedor',
+            'detalles.producto',
+            'detalles.conteoFisico',
+            'detalles.mermas'
+        )
+            ->where('estado', 'En recepción')
+            ->orderBy('id', 'desc')
+            ->get();
+    }
+
+    // Bloquea la importación antes que el detalle, en el mismo orden que el conteo y el cierre.
+    private function bloquearDetalle(int $detalleId): ImportacionDetalle
+    {
+        $importacionId = ImportacionDetalle::whereKey($detalleId)->value('importacion_id');
+
+        $importacion = Importacion::whereKey($importacionId)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        $detalle = ImportacionDetalle::with('conteoFisico')
+            ->whereKey($detalleId)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        return $detalle->setRelation('importacion', $importacion);
+    }
+
+    private function errorDeDetalle(ImportacionDetalle $detalle): ?string
+    {
+        if ($detalle->importacion->estado !== 'En recepción') {
+            return 'Solo se pueden registrar mermas de importaciones en recepción.';
+        }
+
+        if (!$detalle->conteoFisico) {
+            return 'Registra primero el conteo físico de este SKU.';
+        }
+
+        return null;
     }
 }

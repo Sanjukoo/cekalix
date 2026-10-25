@@ -32,7 +32,7 @@ class ConteoFisicoController extends Controller
                 ]);
             }
 
-            $detalles = $importacion->detalles()->lockForUpdate()->get();
+            $detalles = $importacion->detalles()->withSum('mermas', 'cantidad')->lockForUpdate()->get();
             $idsRecibidos = array_keys($validated['conteos']);
             $idsEsperados = $detalles->modelKeys();
 
@@ -41,6 +41,17 @@ class ConteoFisicoController extends Controller
                 throw ValidationException::withMessages([
                     'conteos' => 'Registra todos los SKU de esta importación y únicamente los que aparecen en su detalle.',
                 ]);
+            }
+
+            // Las mermas salen de las cajas recibidas: el conteo no puede quedar por debajo.
+            foreach ($detalles as $detalle) {
+                $danadas = (int) $detalle->mermas_sum_cantidad;
+
+                if ((int) $validated['conteos'][$detalle->id] < $danadas) {
+                    throw ValidationException::withMessages([
+                        'conteos.'.$detalle->id => "Este SKU ya tiene {$danadas} cajas dañadas registradas; el conteo no puede ser menor.",
+                    ]);
+                }
             }
 
             foreach ($detalles as $detalle) {

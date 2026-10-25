@@ -37,7 +37,6 @@
                             data-proveedor="{{ $detalle->importacion->proveedor->razon_social }}"
                             data-nombre="{{ $detalle->producto->nombre ?? '' }}"
                             data-categoria-id="{{ $detalle->producto->categoria_id ?? '' }}"
-                            data-stock="{{ $detalle->producto->stock ?? 0 }}"
                             data-unidades="{{ $detalle->producto->unidades_por_caja ?? 1 }}"
                             data-descripcion="{{ $detalle->producto->descripcion ?? '' }}"
                             @selected(old('importacion_detalle_id') == $detalle->id)
@@ -127,9 +126,9 @@
                 @enderror
             </div>
 
-            {{-- Categoría, stock y unidades --}}
+            {{-- Categoría y unidades --}}
             <div class="row mb-3">
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <label for="categoria_id" class="form-label">
                         Categoría <span class="text-danger">*</span>
                     </label>
@@ -161,31 +160,7 @@
                     @enderror
                 </div>
 
-                <div class="col-md-4">
-                    <label for="stock" class="form-label">
-                        Stock inicial <span class="text-danger">*</span>
-                    </label>
-
-                    <input
-                        type="number"
-                        id="stock"
-                        name="stock"
-                        class="form-control @error('stock') is-invalid @enderror"
-                        value="{{ old('stock', 0) }}"
-                        min="0"
-                        required
-                    >
-
-                    <small class="text-muted">
-                        Si el producto ya existe, se conservará su stock actual.
-                    </small>
-
-                    @error('stock')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <label for="unidades_por_caja" class="form-label">
                         Unidades por caja <span class="text-danger">*</span>
                     </label>
@@ -199,6 +174,10 @@
                         min="1"
                         required
                     >
+
+                    <small class="text-muted">
+                        El stock se suma al cerrar la recepción de la importación.
+                    </small>
 
                     @error('unidades_por_caja')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -281,7 +260,6 @@ const campoProveedor = document.getElementById('proveedor_nombre');
 const campoProveedorId = document.getElementById('proveedor_id');
 const campoNombre = document.getElementById('nombre');
 const campoCategoria = document.getElementById('categoria_id');
-const campoStock = document.getElementById('stock');
 const campoUnidades = document.getElementById('unidades_por_caja');
 const campoDescripcion = document.getElementById('descripcion');
 
@@ -305,7 +283,6 @@ function actualizarDatosImportacion() {
         campoProveedorId.value = '';
         campoNombre.value = '';
         campoCategoria.value = '';
-        campoStock.value = 0;
         campoUnidades.value = 1;
         campoDescripcion.value = '';
 
@@ -320,7 +297,6 @@ function actualizarDatosImportacion() {
     // Precargar la ficha cuando el SKU ya existe.
     campoNombre.value = opcion.dataset.nombre || '';
     campoCategoria.value = opcion.dataset.categoriaId || '';
-    campoStock.value = opcion.dataset.stock || 0;
     campoUnidades.value = opcion.dataset.unidades || 1;
     campoDescripcion.value = opcion.dataset.descripcion || '';
 

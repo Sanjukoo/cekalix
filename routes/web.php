@@ -71,6 +71,9 @@ Route::middleware('auth')->group(function () {
 
         Route::patch('/importaciones/{importacion}/conteo', [ConteoFisicoController::class, 'update'])
             ->name('importaciones.conteo.update');
+
+        Route::patch('/importaciones/{importacion}/cerrar', [ImportacionController::class, 'cerrar'])
+            ->name('importaciones.cerrar');
     });
 
     

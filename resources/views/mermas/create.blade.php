@@ -35,21 +35,27 @@
 
                         @foreach ($importaciones as $importacion)
                             @foreach ($importacion->detalles as $detalle)
+                                {{-- Solo los SKU con conteo físico: la merma sale de lo recibido. --}}
+                                @continue(!$detalle->conteoFisico)
                                 <option
                                     value="{{ $detalle->id }}"
-                                    data-cajas="{{ $detalle->cajas_facturadas }}"
+                                    data-cajas="{{ $detalle->conteoFisico->cajas_contadas }}"
                                     data-mermas="{{ $detalle->mermas->sum('cantidad') }}"
                                     {{ old('importacion_detalle_id', request('importacion_detalle_id')) == $detalle->id ? 'selected' : '' }}
                                 >
                                     Importación #{{ $importacion->id }}
                                     - Contenedor {{ $importacion->numero_contenedor }}
-                                    - SKU: {{ $detalle->producto->codigo ?? 'Sin código' }}
-                                    - {{ $detalle->producto->nombre ?? 'Producto sin nombre' }}
-                                    - {{ $detalle->cajas_facturadas }} cajas facturadas
+                                    - SKU: {{ $detalle->producto_codigo ?? $detalle->producto?->codigo ?? 'Sin código' }}
+                                    - {{ $detalle->producto?->nombre ?? 'Pendiente de registro' }}
+                                    - {{ $detalle->conteoFisico->cajas_contadas }} cajas recibidas
                                 </option>
                             @endforeach
                         @endforeach
                     </select>
+
+                    <div class="form-text">
+                        Solo aparecen SKU de importaciones en recepción con el conteo físico registrado.
+                    </div>
                 </div>
 
                 <div class="mb-3">
@@ -69,7 +75,7 @@
                     >
 
                     <div class="form-text">
-                        La cantidad acumulada no puede superar las cajas facturadas.
+                        La cantidad acumulada no puede superar las cajas recibidas en el conteo físico.
                     </div>
                 </div>
 
@@ -150,8 +156,8 @@
 
                 <div class="alert alert-info" id="resumen_cajas" style="display: none;">
                     <p class="mb-1">
-                        Cajas facturadas:
-                        <strong id="cajas_facturadas">0</strong>
+                        Cajas recibidas (conteo físico):
+                        <strong id="cajas_recibidas">0</strong>
                     </p>
 
                     <p class="mb-1">
@@ -193,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const cantidadInput = document.getElementById('cantidad');
 
     const resumen = document.getElementById('resumen_cajas');
-    const cajasFacturadas = document.getElementById('cajas_facturadas');
+    const cajasRecibidas = document.getElementById('cajas_recibidas');
     const mermasAnteriores = document.getElementById('mermas_anteriores');
     const totalDanadas = document.getElementById('total_daniadas');
     const cajasEstables = document.getElementById('cajas_estables');
@@ -217,13 +223,13 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        const facturadas = Number(opcion.dataset.cajas || 0);
+        const recibidas = Number(opcion.dataset.cajas || 0);
         const anteriores = Number(opcion.dataset.mermas || 0);
         const cantidad = Number(cantidadInput.value || 0);
         const total = anteriores + cantidad;
-        const estables = facturadas - total;
+        const estables = recibidas - total;
 
-        cajasFacturadas.textContent = facturadas;
+        cajasRecibidas.textContent = recibidas;
         mermasAnteriores.textContent = anteriores;
         totalDanadas.textContent = total;
         cajasEstables.textContent = estables;

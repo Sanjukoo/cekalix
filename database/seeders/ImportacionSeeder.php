@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Categoria;
 use App\Models\Importacion;
 use App\Models\Producto;
 use App\Models\Proveedor;
@@ -15,21 +14,19 @@ class ImportacionSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->call([CategoriaSeeder::class, ProveedorSeeder::class, UserSeeder::class]);
-
+        // Una importación por cada etapa del flujo: cerrada, lista para cerrar y recién llegada.
+        // Cada SKU: [código, cajas facturadas, cajas contadas (null = sin contar), mermas [cantidad, motivo, descripción]]
         $embarques = [
             [
                 'proveedor' => 'Proveedor Internacional A.',
                 'factura' => 'JH-2026-1048',
                 'contenedor' => 'TGHU4729136',
                 'llegada' => '2026-10-14',
-                'productos' => [
-                    ['COR-TE45-400', 'Corredera telescópica 45 mm x 400 mm', 'correderas', 15, 120, 118,
-                        ['longitud' => '400 mm', 'espesor' => '1.2 mm', 'ancho' => '45 mm', 'color' => 'Zincado']],
-                    ['BIS-CL35-110', 'Bisagra cazoleta 35 mm cierre lento 110°', 'bisagras', 100, 80, 84,
-                        ['tipo' => 'Cierre lento 110°', 'acabado' => 'Niquelado', 'peso' => '95 g']],
-                    ['PIS-GAS100-260', 'Pistón a gas 100 N de 260 mm', 'pistones', 50, 60, 60,
-                        ['fuerza' => '100 N', 'longitud' => '260 mm', 'acabado' => 'Gris satinado']],
+                'estado' => 'Procesada',
+                'detalles' => [
+                    ['COR-TE45-400', 120, 118, [[3, 'Cajas aplastadas', null]]],
+                    ['BIS-CL35-110', 80, 84, []],
+                    ['PIS-GAS100-260', 60, 60, [[2, 'Cajas mojadas', null]]],
                 ],
             ],
             [
@@ -37,13 +34,11 @@ class ImportacionSeeder extends Seeder
                 'factura' => 'GT-2026-1053',
                 'contenedor' => 'MSKU6842057',
                 'llegada' => '2026-10-15',
-                'productos' => [
-                    ['COR-TE45-450', 'Corredera telescópica 45 mm x 450 mm', 'correderas', 15, 100, 100,
-                        ['longitud' => '450 mm', 'espesor' => '1.2 mm', 'ancho' => '45 mm', 'color' => 'Zincado']],
-                    ['BIS-CL35-165', 'Bisagra cazoleta 35 mm apertura 165°', 'bisagras', 100, 75, 73,
-                        ['tipo' => 'Apertura 165°', 'acabado' => 'Niquelado', 'peso' => '145 g']],
-                    ['CER-MUE22-138', 'Cerradura para mueble de cilindro 22 mm', 'cerraduras', 120, 90, 93,
-                        ['material' => 'Aleación de zinc', 'tamano' => '22 mm']],
+                'estado' => 'Procesada',
+                'detalles' => [
+                    ['COR-TE45-450', 100, 100, []],
+                    ['BIS-CL35-165', 75, 73, [[1, 'Cajas rotas', null]]],
+                    ['CER-MUE22-138', 90, 93, []],
                 ],
             ],
             [
@@ -51,11 +46,23 @@ class ImportacionSeeder extends Seeder
                 'factura' => 'PI-2026-0876',
                 'contenedor' => 'CMAU3158274',
                 'llegada' => '2026-10-16',
-                'productos' => [
-                    ['COR-TE45-500', 'Corredera telescópica 45 mm x 500 mm', 'correderas', 15, 50, null,
-                        ['longitud' => '500 mm', 'espesor' => '1.2 mm', 'ancho' => '45 mm', 'color' => 'Negro']],
-                    ['PIS-GAS120-270', 'Pistón a gas 120 N de 270 mm', 'pistones', 50, 40, null,
-                        ['fuerza' => '120 N', 'longitud' => '270 mm', 'acabado' => 'Gris satinado']],
+                'estado' => 'En recepción',
+                'detalles' => [
+                    ['COR-TE45-500', 50, 48, [[2, 'OTRO', 'Rieles doblados por mala estiba en el contenedor']]],
+                    ['PIS-GAS120-270', 40, 40, []],
+                ],
+            ],
+            [
+                'proveedor' => 'Proveedor Internacional A.',
+                'factura' => 'JH-2026-1102',
+                'contenedor' => 'TGHU5093318',
+                'llegada' => '2026-10-22',
+                'estado' => 'En recepción',
+                'detalles' => [
+                    ['BIS-CL35-110', 60, null, []],
+                    ['BIS-REC-95', 50, null, []],
+                    // SKU aún no registrado como producto: aparece en "Nuevo producto".
+                    ['COR-OC-350', 30, null, []],
                 ],
             ],
         ];
@@ -74,41 +81,62 @@ class ImportacionSeeder extends Seeder
                     'fecha_llegada' => $embarque['llegada'],
                     'estado' => 'En recepción',
                 ]);
-                if ($importacion->wasRecentlyCreated) {
-                    $importacion->forceFill(['created_at' => $registro, 'updated_at' => $registro])->save();
+
+                // Si la importación ya existía, no se toca: así no se suma stock dos veces.
+                if (!$importacion->wasRecentlyCreated) {
+                    continue;
                 }
 
-                foreach ($embarque['productos'] as [$codigo, $nombre, $categoriaSlug, $unidades, $facturadas, $contadas, $atributos]) {
-                    $categoria = Categoria::where('slug', $categoriaSlug)->firstOrFail();
-                    $producto = Producto::firstOrCreate(['codigo' => $codigo], [
-                        'nombre' => $nombre,
-                        'categoria_id' => $categoria->id,
-                        'proveedor_id' => $proveedor->id,
-                        'stock' => 0,
-                        'unidades_por_caja' => $unidades,
-                        'descripcion' => $nombre.'. Presentación de '.$unidades.' unidades por caja.',
-                    ]);
-                    foreach ($atributos as $clave => $valor) {
-                        $producto->atributos()->firstOrCreate(['clave' => $clave], ['valor' => $valor]);
-                    }
+                $importacion->forceFill(['created_at' => $registro, 'updated_at' => $registro])->save();
 
-                    $detalle = $importacion->detalles()->firstOrCreate(['producto_id' => $producto->id], [
+                foreach ($embarque['detalles'] as [$codigo, $facturadas, $contadas, $mermas]) {
+                    $detalle = $importacion->detalles()->create([
+                        'producto_id' => Producto::where('codigo', $codigo)->value('id'),
+                        'producto_codigo' => $codigo,
                         'cajas_facturadas' => $facturadas,
                     ]);
-                    if ($contadas !== null) {
-                        $conteo = $detalle->conteoFisico()->firstOrCreate([], [
-                            'cajas_contadas' => $contadas,
-                            'diferencia' => $contadas - $detalle->cajas_facturadas,
-                            'registrado_por' => $encargado->id,
-                        ]);
-                        if ($conteo->wasRecentlyCreated) {
-                            $conteo->forceFill(['created_at' => $registro->copy()->addHours(2), 'updated_at' => $registro->copy()->addHours(2)])->save();
-                        }
+
+                    if ($contadas === null) {
+                        continue;
                     }
 
+                    $conteo = $detalle->conteoFisico()->create([
+                        'cajas_contadas' => $contadas,
+                        'diferencia' => $contadas - $facturadas,
+                        'registrado_por' => $encargado->id,
+                    ]);
+                    $conteo->forceFill(['created_at' => $registro->copy()->addHours(2), 'updated_at' => $registro->copy()->addHours(2)])->save();
+
+                    foreach ($mermas as [$cantidad, $motivo, $descripcion]) {
+                        $detalle->mermas()->create([
+                            'cantidad' => $cantidad,
+                            'motivo' => $motivo,
+                            'descripcion' => $descripcion,
+                            'fecha_registro' => $embarque['llegada'],
+                        ]);
+                    }
                 }
 
+                if ($embarque['estado'] === 'Procesada') {
+                    $this->cerrar($importacion);
+                }
             }
         });
+    }
+
+    // Mismo cálculo que el cierre de recepción: (contadas - dañadas) × unidades por caja.
+    private function cerrar(Importacion $importacion): void
+    {
+        $detalles = $importacion->detalles()
+            ->with('conteoFisico', 'producto')
+            ->withSum('mermas', 'cantidad')
+            ->get();
+
+        foreach ($detalles as $detalle) {
+            $cajasBuenas = $detalle->conteoFisico->cajas_contadas - (int) $detalle->mermas_sum_cantidad;
+            $detalle->producto->increment('stock', max(0, $cajasBuenas) * $detalle->producto->unidades_por_caja);
+        }
+
+        $importacion->update(['estado' => 'Procesada']);
     }
 }

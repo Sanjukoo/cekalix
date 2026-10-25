@@ -70,7 +70,6 @@ class ProductoController extends Controller
            'importacion_detalle_id' => 'required|integer|exists:importacion_detalles,id',
            'nombre' => 'required|string|max:100',
            'categoria_id' => 'required|exists:categorias,id',
-           'stock' => 'required|integer|min:0',
            'unidades_por_caja' => 'required|integer|min:1',
            'descripcion' => 'nullable|string',
        ]);
@@ -108,12 +107,13 @@ class ProductoController extends Controller
                $detalle->save();
            } else {
             // Crear un producto únicamente si el SKU todavía no existe.
+            // Nace sin stock: lo recibe al cerrar la recepción de la importación.
                $producto = Producto::create([
                    'codigo' => $codigo,
                    'nombre' => $validated['nombre'],
                    'categoria_id' => $validated['categoria_id'],
                    'proveedor_id' => $detalle->importacion->proveedor_id,
-                   'stock' => $validated['stock'],
+                   'stock' => 0,
                    'unidades_por_caja' => $validated['unidades_por_caja'],
                    'descripcion' => $validated['descripcion'] ?? null,
                ]);

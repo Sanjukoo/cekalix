@@ -8,11 +8,16 @@
                 Diferencia = Cajas Contadas - Cajas Facturadas.
             </p>
 
-            @if($errors->any())
+            @php
+                $erroresConteo = collect($errors->get('conteos'))
+                    ->merge(collect($errors->get('conteos.*'))->flatten());
+            @endphp
+
+            @if($erroresConteo->isNotEmpty())
                 <div class="alert alert-danger" role="alert">
                     <strong>No se pudo guardar el conteo.</strong>
                     <ul class="mb-0">
-                        @foreach($errors->all() as $error)
+                        @foreach($erroresConteo as $error)
                             <li>{{ $error }}</li>
                         @endforeach
                     </ul>
@@ -25,7 +30,7 @@
 
             @if(!$editable)
                 <p class="alert alert-info">
-                    El conteo solo puede editarse mientras la importación está en recepción.
+                    El conteo y las mermas solo pueden editarse mientras la importación está en recepción.
                 </p>
             @endif
 
@@ -44,8 +49,10 @@
                                 <th scope="col">Cajas Facturadas</th>
                                 <th scope="col">Cajas Contadas</th>
                                 <th scope="col">Diferencia</th>
+                                <th scope="col">Cajas Dañadas</th>
+                                <th scope="col">Unidades a Stock</th>
 
-                                @if(auth()->user()->role === 'admin')
+                                @if($editable)
                                     <th scope="col">Acciones</th>
                                 @endif
                             </tr>
@@ -86,6 +93,12 @@
                                             : ($diferencia > 0
                                                 ? '+'.$diferencia.' (Sobrante)'
                                                 : '0 (Coincide)'));
+
+                                    // Lo que el cierre sumará al stock, según el conteo guardado.
+                                    $danadas = $detalle->mermas->sum('cantidad');
+                                    $unidadesAStock = $detalle->conteoFisico && $detalle->producto
+                                        ? max(0, $detalle->conteoFisico->cajas_contadas - $danadas) * $detalle->producto->unidades_por_caja
+                                        : null;
                                 @endphp
 
                                 <tr data-conteo-fila
@@ -153,12 +166,27 @@
                                         </output>
                                     </td>
 
-                                    @if(auth()->user()->role === 'admin')
+                                    <td>{{ $danadas }}</td>
+
+                                    <td>
+                                        @if($unidadesAStock !== null)
+                                            {{ $unidadesAStock }}
+                                        @elseif(!$detalle->producto)
+                                            <small class="text-warning">Falta registrar el producto</small>
+                                        @else
+                                            <small class="text-muted">Falta el conteo</small>
+                                        @endif
+                                    </td>
+
+                                    @if($editable)
                                         <td>
-                                            <a href="{{ route('mermas.create', ['importacion_detalle_id' => $detalle->id]) }}"
-                                               class="btn btn-sm btn-rojo">
-                                                Registrar merma
-                                            </a>
+                                            {{-- La merma se registra sobre lo recibido, por eso exige el conteo. --}}
+                                            @if($detalle->conteoFisico)
+                                                <a href="{{ route('mermas.create', ['importacion_detalle_id' => $detalle->id]) }}"
+                                                   class="btn btn-sm btn-rojo">
+                                                    Registrar merma
+                                                </a>
+                                            @endif
                                         </td>
                                     @endif
                                 </tr>
@@ -177,6 +205,37 @@
                     </button>
                 @endif
             </form>
+
+            @if($editable)
+                <hr>
+
+                <h6>Cerrar recepción</h6>
+
+                <p class="text-muted small">
+                    Al cerrar, cada SKU suma al stock (Cajas Contadas - Cajas Dañadas) × unidades por caja.
+                    Después ya no se podrá modificar el conteo ni las mermas de esta importación.
+                    Guarda el conteo antes de cerrar.
+                </p>
+
+                @error('cierre')
+                    <div class="alert alert-danger" role="alert">{{ $message }}</div>
+                @enderror
+
+                <form action="{{ route('importaciones.cerrar', $importacion) }}"
+                      method="POST"
+                      onsubmit="return confirm('¿Cerrar la recepción y actualizar el stock? Esta acción no se puede deshacer.');">
+                    @csrf
+                    @method('PATCH')
+
+                    <button type="submit" class="btn btn-negro">
+                        Cerrar recepción y actualizar stock
+                    </button>
+                </form>
+            @else
+                <p class="alert alert-success mt-3 mb-0">
+                    Recepción cerrada: el stock ya fue actualizado con las cajas en buen estado.
+                </p>
+            @endif
         @else
             <p class="text-center text-muted">Sin detalle de mercadería.</p>
         @endif
