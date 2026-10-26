@@ -1,57 +1,52 @@
 @extends('layouts.app')
 
-@section('title', 'Inventario')
+@section('title', 'Mi panel')
 
 @section('content')
-    <div class="mb-4">
-        <h1 class="page-title">Panel de inventario</h1>
+<div class="mb-4">
+    <h1 class="page-title">Hola, {{ Auth::user()->name }}</h1>
+    <p class="text-muted mb-0">Estado del inventario.</p>
+</div>
 
-        <p class="text-muted">
-            Bienvenido, {{ auth()->user()->name }}.
-            Consulta el stock y administra las fichas de productos.
-        </p>
-    </div>
+<div class="row g-3 mb-4">
+    @include('dashboard._indicador', [
+        'icono' => 'bi-exclamation-triangle',
+        'titulo' => 'Productos con stock bajo',
+        'valor' => $stockBajo,
+        'alerta' => $stockBajo > 0,
+        'enlace' => route('productos.index'),
+        'textoEnlace' => 'Revisar stock',
+    ])
 
-    <div class="row g-3">
-        <div class="col-12 col-md-6">
-            <div class="card card-custom h-100">
-                <div class="card-body">
-                    <h2 class="h5">Productos registrados</h2>
+    @include('dashboard._indicador', [
+        'icono' => 'bi-truck',
+        'titulo' => 'Importaciones en recepción',
+        'valor' => $enRecepcion,
+        'enlace' => route('importaciones.index'),
+        'textoEnlace' => 'Ver recepción',
+    ])
 
-                    <p class="stat-number">
-                        {{ $totalProductos }}
-                    </p>
+    @include('dashboard._indicador', [
+        'icono' => 'bi-arrow-left-right',
+        'titulo' => 'Movimientos de hoy',
+        'valor' => $movimientosHoy,
+    ])
+</div>
 
-                    <a href="{{ route('productos.index') }}"
-                       class="btn btn-negro">
-                        Ver catálogo y stock
-                    </a>
-                </div>
-            </div>
-        </div>
+<h2 class="h6 text-uppercase text-muted fw-bold mb-3">Accesos rápidos</h2>
 
-        <div class="col-12 col-md-6">
-            <div class="card card-custom h-100">
-                <div class="card-body">
-                    <h2 class="h5">Productos con stock bajo</h2>
-
-                    <p class="stat-number">
-                        {{ $productosBajoStock }}
-                    </p>
-
-                    <p class="text-muted">
-                        Productos cuyo stock es menor a 10,
-                        según el criterio actual del sistema.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="mt-4">
-        <a href="{{ route('productos.create') }}"
-           class="btn btn-rojo">
-            Registrar producto
+<div class="row g-3">
+    <div class="col-md-6">
+        <a href="{{ route('productos.index') }}" class="acceso">
+            <span class="acceso-icono"><i class="bi bi-box-seam"></i></span>
+            <span><strong>Catálogo y stock</strong><small>Productos, ajustes e historial</small></span>
         </a>
     </div>
+    <div class="col-md-6">
+        <a href="{{ route('importaciones.index') }}" class="acceso">
+            <span class="acceso-icono"><i class="bi bi-truck"></i></span>
+            <span><strong>Recepción</strong><small>Importaciones y mermas</small></span>
+        </a>
+    </div>
+</div>
 @endsection

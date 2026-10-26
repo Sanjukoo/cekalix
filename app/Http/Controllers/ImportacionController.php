@@ -6,6 +6,7 @@ use App\Models\Importacion;
 use App\Models\Proveedor;
 use App\Models\Producto;
 use App\Models\ImportacionDetalle;
+use App\Models\MovimientoInventario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -171,7 +172,14 @@ class ImportacionController extends Controller
                 $cajasBuenas = $detalle->conteoFisico->cajas_contadas - (int) $detalle->mermas_sum_cantidad;
 
                 $producto = Producto::whereKey($detalle->producto_id)->lockForUpdate()->firstOrFail();
-                $producto->increment('stock', max(0, $cajasBuenas) * $producto->unidades_por_caja);
+
+                MovimientoInventario::registrar(
+                    $producto,
+                    max(0, $cajasBuenas) * $producto->unidades_por_caja,
+                    'cierre_importacion',
+                    "Recepción de importación #{$importacion->id}",
+                    $importacion
+                );
             }
 
             $importacion->update(['estado' => 'Procesada']);

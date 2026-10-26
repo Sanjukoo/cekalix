@@ -15,12 +15,14 @@ class Producto extends Model
         'proveedor_id',
         'stock',
         'unidades_por_caja',
+        'precio_venta',
         'descripcion',
     ];
 
     protected $casts = [
         'stock' => 'integer',
         'unidades_por_caja' => 'integer',
+        'precio_venta' => 'decimal:2',
     ];
 
     public function categoria()
@@ -41,6 +43,16 @@ class Producto extends Model
     public function importacionDetalles()
     {
         return $this->hasMany(ImportacionDetalle::class);
+    }
+
+    public function ventaDetalles()
+    {
+        return $this->hasMany(VentaDetalle::class);
+    }
+
+    public function movimientos()
+    {
+        return $this->hasMany(MovimientoInventario::class);
     }
 
     public function obtenerAtributos(): array

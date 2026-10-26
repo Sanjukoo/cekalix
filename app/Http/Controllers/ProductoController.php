@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Producto;
 use App\Models\ImportacionDetalle;
+use App\Models\MovimientoInventario;
 use App\Models\Categoria;
 use App\Models\AtributoProducto;
 use App\Models\Proveedor;
@@ -71,6 +72,7 @@ class ProductoController extends Controller
            'nombre' => 'required|string|max:100',
            'categoria_id' => 'required|exists:categorias,id',
            'unidades_por_caja' => 'required|integer|min:1',
+           'precio_venta' => 'nullable|numeric|min:0',
            'descripcion' => 'nullable|string',
        ]);
 
@@ -100,6 +102,7 @@ class ProductoController extends Controller
                    'nombre' => $validated['nombre'],
                    'categoria_id' => $validated['categoria_id'],
                    'unidades_por_caja' => $validated['unidades_por_caja'],
+                   'precio_venta' => $validated['precio_venta'] ?? $producto->precio_venta,
                    'descripcion' => $validated['descripcion'] ?? null,
               ]);
 
@@ -115,6 +118,7 @@ class ProductoController extends Controller
                    'proveedor_id' => $detalle->importacion->proveedor_id,
                    'stock' => 0,
                    'unidades_por_caja' => $validated['unidades_por_caja'],
+                   'precio_venta' => $validated['precio_venta'] ?? 0,
                    'descripcion' => $validated['descripcion'] ?? null,
                ]);
 
@@ -141,7 +145,15 @@ class ProductoController extends Controller
     public function show(Producto $producto)
     {
         $producto->load('categoria', 'proveedor', 'atributos');
-        return view('productos.show', compact('producto'));
+
+        // Historial del kárdex que se muestra debajo de la ficha del producto.
+        $movimientos = $producto->movimientos()
+            ->with('usuario')
+            ->latest('id')
+            ->take(50)
+            ->get();
+
+        return view('productos.show', compact('producto', 'movimientos'));
     }
 
     public function edit(Producto $producto)
@@ -165,8 +177,8 @@ class ProductoController extends Controller
             'nombre' => 'required|string|max:100',
             'categoria_id' => 'required|exists:categorias,id',
             'proveedor_id' => 'required|exists:proveedores,id',
-            'stock' => 'required|integer|min:0',
             'unidades_por_caja' => 'required|integer|min:1',
+            'precio_venta' => 'nullable|numeric|min:0',
             'descripcion' => 'nullable|string',
         ]);
 
@@ -181,10 +193,36 @@ class ProductoController extends Controller
         return redirect()->route('productos.show', $producto)->with('success', 'Producto actualizado correctamente.');
     }
 
+    // Ajuste manual de stock (conteo físico, merma no registrada, etc.). Siempre queda en el kárdex con su motivo.
+    public function ajustar(Request $request, Producto $producto)
+    {
+        $validated = $request->validate([
+            'cantidad' => 'required|integer|not_in:0|between:-100000,100000',
+            'motivo' => 'required|string|max:255',
+        ], [
+            'cantidad.not_in' => 'El ajuste no puede ser 0.',
+        ]);
+
+        DB::transaction(function () use ($validated, $producto) {
+            $productoActual = Producto::whereKey($producto->id)->lockForUpdate()->firstOrFail();
+
+            MovimientoInventario::registrar(
+                $productoActual,
+                $validated['cantidad'],
+                'ajuste',
+                $validated['motivo']
+            );
+        });
+
+        return redirect()
+            ->route('productos.show', $producto)
+            ->with('success', 'Ajuste de stock registrado en el kárdex.');
+    }
+
     public function destroy(Producto $producto)
     {
-        if ($producto->importacionDetalles()->exists()) {
-            return redirect()->route('productos.index')->with('error', 'No se puede eliminar un producto que tiene importaciones registradas.');
+        if ($producto->importacionDetalles()->exists() || $producto->ventaDetalles()->exists()) {
+            return redirect()->route('productos.index')->with('error', 'No se puede eliminar un producto que tiene importaciones o ventas registradas.');
         }
 
         $producto->delete();

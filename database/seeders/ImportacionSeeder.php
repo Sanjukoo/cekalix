@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Importacion;
+use App\Models\MovimientoInventario;
 use App\Models\Producto;
 use App\Models\Proveedor;
 use App\Models\User;
@@ -134,7 +135,13 @@ class ImportacionSeeder extends Seeder
 
         foreach ($detalles as $detalle) {
             $cajasBuenas = $detalle->conteoFisico->cajas_contadas - (int) $detalle->mermas_sum_cantidad;
-            $detalle->producto->increment('stock', max(0, $cajasBuenas) * $detalle->producto->unidades_por_caja);
+            MovimientoInventario::registrar(
+                $detalle->producto,
+                max(0, $cajasBuenas) * $detalle->producto->unidades_por_caja,
+                'cierre_importacion',
+                "Recepción de importación #{$importacion->id}",
+                $importacion
+            );
         }
 
         $importacion->update(['estado' => 'Procesada']);

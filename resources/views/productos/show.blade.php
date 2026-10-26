@@ -57,6 +57,10 @@
                         <label class="form-label"><strong>Unidades por Caja</strong></label>
                         <p class="form-control-plaintext">{{ $producto->unidades_por_caja }}</p>
                     </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Precio de venta (por unidad)</strong></label>
+                        <p class="form-control-plaintext">S/ {{ number_format($producto->precio_venta, 2) }}</p>
+                    </div>
                 </div>
 
                 @if($producto->descripcion)
@@ -88,6 +92,50 @@
     </div>
 
     <div class="col-md-4">
+        @if(in_array(auth()->user()->role, ['admin', 'inventario'], true))
+            <div class="card card-custom mb-3">
+                <div class="card-header">Stock y kárdex</div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        Stock actual: <strong>{{ $producto->stock }}</strong> unidades
+                    </p>
+
+                    <a href="#kardex" class="btn btn-outline-dark btn-sm w-100 mb-3">
+                        Ver historial de movimientos
+                    </a>
+
+                    <form action="{{ route('productos.ajustar', $producto) }}" method="POST">
+                        @csrf
+
+                        <label for="cantidad" class="form-label">Ajuste (unidades)</label>
+                        <input type="number" id="cantidad" name="cantidad" step="1"
+                               class="form-control mb-2 @error('cantidad') is-invalid @enderror"
+                               placeholder="Ej: 10 para sumar, -5 para restar"
+                               value="{{ old('cantidad') }}" required>
+                        @error('cantidad')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+
+                        <label for="motivo" class="form-label">Motivo</label>
+                        <input type="text" id="motivo" name="motivo" maxlength="255"
+                               class="form-control mb-2 @error('motivo') is-invalid @enderror"
+                               value="{{ old('motivo') }}" required>
+                        @error('motivo')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                        @enderror
+
+                        @error('stock')
+                            <div class="alert alert-danger py-2 small">{{ $message }}</div>
+                        @enderror
+
+                        <button type="submit" class="btn btn-negro w-100">
+                            Registrar ajuste
+                        </button>
+                    </form>
+                </div>
+            </div>
+        @endif
+
         <div class="card card-custom bg-light">
             <div class="card-header">Datos de Auditoría</div>
             <div class="card-body small">
@@ -112,4 +160,49 @@
         @endif
     </div>
 </div>
+
+@if(in_array(auth()->user()->role, ['admin', 'inventario'], true))
+    <div class="card card-custom mt-4" id="kardex">
+        <div class="card-header">
+            Historial de movimientos (kárdex)
+            <small class="text-muted fw-normal ms-2">últimos {{ $movimientos->count() }} movimientos</small>
+        </div>
+        <div class="card-body">
+            @if($movimientos->isEmpty())
+                <p class="text-center text-muted py-3 mb-0">Este producto todavía no tiene movimientos.</p>
+            @else
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Movimiento</th>
+                                <th class="text-end">Cantidad</th>
+                                <th class="text-end">Saldo</th>
+                                <th>Detalle</th>
+                                <th>Usuario</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($movimientos as $movimiento)
+                                <tr>
+                                    <td class="text-nowrap">{{ $movimiento->created_at->format('d/m/Y H:i') }}</td>
+                                    <td>{{ \App\Models\MovimientoInventario::TIPOS[$movimiento->tipo] ?? $movimiento->tipo }}</td>
+                                    <td class="text-end">
+                                        <strong class="{{ $movimiento->cantidad > 0 ? 'text-success' : 'text-danger' }}">
+                                            {{ $movimiento->cantidad > 0 ? '+' : '' }}{{ $movimiento->cantidad }}
+                                        </strong>
+                                    </td>
+                                    <td class="text-end">{{ $movimiento->saldo }}</td>
+                                    <td><small>{{ $movimiento->motivo ?? '—' }}</small></td>
+                                    <td>{{ $movimiento->usuario?->name ?? 'Sistema' }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        </div>
+    </div>
+@endif
 @endsection

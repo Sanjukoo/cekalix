@@ -3,6 +3,8 @@
 @section('title', 'Importaciones')
 
 @section('content')
+@include('layouts._hub', ['hubActivo' => 'recepcion', 'activa' => 'importaciones'])
+
 <div class="row mb-4">
     <div class="col-md-8">
         <h2 class="page-title">Importaciones Registradas</h2>

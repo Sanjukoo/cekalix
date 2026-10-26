@@ -71,8 +71,8 @@ class RolesTest extends TestCase
     {
         $this->actingAs($this->usuario('admin'))->get('/dashboard')
             ->assertOk()
-            ->assertSee('Productos Registrados')
-            ->assertSee('Proveedores Activos');
+            ->assertSee('Ventas de hoy')
+            ->assertSee('Productos con stock bajo');
     }
 
     public function test_admin_puede_crear_productos_y_ventas_no(): void

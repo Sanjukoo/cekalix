@@ -213,7 +213,8 @@ class ConteoFisicoTest extends TestCase
         $this->assertDatabaseCount('mermas', 4);
         $this->assertSame(2, Importacion::where('estado', 'Procesada')->count());
         // Solo las importaciones cerradas suman stock: (118 - 3) cajas × 15 unidades.
-        $this->assertSame(1725, Producto::where('codigo', 'COR-TE45-400')->value('stock'));
+        // El seeder de ventas descuenta 30 unidades de este SKU: 1725 - 30.
+        $this->assertSame(1695, Producto::where('codigo', 'COR-TE45-400')->value('stock'));
         $this->assertSame(0, Producto::where('codigo', 'COR-TE45-500')->value('stock'));
         $this->assertDatabaseHas('importacion_detalles', ['producto_codigo' => 'COR-OC-350', 'producto_id' => null]);
 
@@ -227,7 +228,8 @@ class ConteoFisicoTest extends TestCase
         $this->assertDatabaseCount('conteos_fisicos', 8);
         $this->assertDatabaseCount('mermas', 4);
         $this->assertSame(77, $conteo->fresh()->cajas_contadas);
-        $this->assertSame(1725, Producto::where('codigo', 'COR-TE45-400')->value('stock'));
+        // Volver a sembrar no descuenta la venta otra vez.
+        $this->assertSame(1695, Producto::where('codigo', 'COR-TE45-400')->value('stock'));
     }
 
 }

@@ -38,6 +38,7 @@
                             data-nombre="{{ $detalle->producto->nombre ?? '' }}"
                             data-categoria-id="{{ $detalle->producto->categoria_id ?? '' }}"
                             data-unidades="{{ $detalle->producto->unidades_por_caja ?? 1 }}"
+                            data-precio="{{ $detalle->producto->precio_venta ?? '' }}"
                             data-descripcion="{{ $detalle->producto->descripcion ?? '' }}"
                             @selected(old('importacion_detalle_id') == $detalle->id)
                         >
@@ -185,6 +186,30 @@
                 </div>
             </div>
 
+            {{-- Precio de venta: se usa en el módulo de ventas --}}
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="precio_venta" class="form-label">
+                        Precio de venta (S/ por unidad) <span class="text-danger">*</span>
+                    </label>
+
+                    <input
+                        type="number"
+                        id="precio_venta"
+                        name="precio_venta"
+                        class="form-control @error('precio_venta') is-invalid @enderror"
+                        value="{{ old('precio_venta') }}"
+                        min="0"
+                        step="0.01"
+                        required
+                    >
+
+                    @error('precio_venta')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+            </div>
+
             {{-- Descripción --}}
             <div class="mb-3">
                 <label for="descripcion" class="form-label">Descripción</label>
@@ -262,6 +287,7 @@ const campoNombre = document.getElementById('nombre');
 const campoCategoria = document.getElementById('categoria_id');
 const campoUnidades = document.getElementById('unidades_por_caja');
 const campoDescripcion = document.getElementById('descripcion');
+const campoPrecio = document.getElementById('precio_venta');
 
 function escaparHtml(valor) {
     return String(valor ?? '').replace(/[&<>"']/g, caracter => ({
@@ -284,6 +310,7 @@ function actualizarDatosImportacion() {
         campoNombre.value = '';
         campoCategoria.value = '';
         campoUnidades.value = 1;
+        campoPrecio.value = '';
         campoDescripcion.value = '';
 
         actualizarAtributos();
@@ -298,6 +325,7 @@ function actualizarDatosImportacion() {
     campoNombre.value = opcion.dataset.nombre || '';
     campoCategoria.value = opcion.dataset.categoriaId || '';
     campoUnidades.value = opcion.dataset.unidades || 1;
+    campoPrecio.value = opcion.dataset.precio || '';
     campoDescripcion.value = opcion.dataset.descripcion || '';
 
     actualizarAtributos();

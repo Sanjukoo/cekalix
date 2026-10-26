@@ -1,81 +1,66 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard')
+@section('title', 'Mi panel')
 
 @section('content')
-<div class="row mb-4">
-    <div class="col-12">
-        <h2 class="page-title">Bienvenido, {{ Auth::user()->name }}</h2>
-        <p class="text-muted">Panel de Control</p>
-    </div>
+<div class="mb-4">
+    <h1 class="page-title">Hola, {{ Auth::user()->name }}</h1>
+    <p class="text-muted mb-0">Así está hoy tu negocio.</p>
 </div>
 
-<div class="row">
-    <div class="col-md-6 col-lg-3 mb-4">
-        <div class="card card-custom">
-            <div class="card-body text-center">
-                <h4 class="stat-number">{{ $totalProductos }}</h4>
-                <p class="text-muted mb-0">Productos Registrados</p>
-                <a href="{{ route('productos.index') }}" class="btn btn-sm btn-outline-dark mt-2">Ver productos</a>
-            </div>
-        </div>
-    </div>
+<div class="row g-3 mb-4">
+    @include('dashboard._indicador', [
+        'icono' => 'bi-cash-coin',
+        'titulo' => 'Ventas de hoy',
+        'valor' => 'S/ '.number_format($ventasHoy, 2),
+        'enlace' => route('ventas.index'),
+        'textoEnlace' => 'Ver ventas',
+    ])
 
-    <div class="col-md-6 col-lg-3 mb-4">
-        <div class="card card-custom">
-            <div class="card-body text-center">
-                <h4 class="stat-number">{{ $totalProveedores }}</h4>
-                <p class="text-muted mb-0">Proveedores Activos</p>
-                <a href="{{ route('proveedores.index') }}" class="btn btn-sm btn-outline-dark mt-2">Ver proveedores</a>
-            </div>
-        </div>
-    </div>
+    @include('dashboard._indicador', [
+        'icono' => 'bi-graph-up-arrow',
+        'titulo' => 'Ventas del mes',
+        'valor' => 'S/ '.number_format($ventasMes, 2),
+    ])
 
-    <div class="col-md-6 col-lg-3 mb-4">
-        <div class="card card-custom">
-            <div class="card-body text-center">
-                <h4 class="stat-number">{{ $totalImportaciones }}</h4>
-                <p class="text-muted mb-0">Importaciones Registradas</p>
-                <a href="{{ route('importaciones.index') }}" class="btn btn-sm btn-outline-dark mt-2">Ver importaciones</a>
-            </div>
-        </div>
-    </div>
+    @include('dashboard._indicador', [
+        'icono' => 'bi-exclamation-triangle',
+        'titulo' => 'Productos con stock bajo',
+        'valor' => $stockBajo,
+        'alerta' => $stockBajo > 0,
+        'enlace' => route('productos.index'),
+        'textoEnlace' => 'Revisar stock',
+    ])
 
-    <div class="col-md-6 col-lg-3 mb-4">
-        <div class="card card-custom border-warning">
-            <div class="card-body text-center">
-                <h4 class="stat-number alerta">{{ $productosBajoStock }}</h4>
-                <p class="text-muted mb-0">Productos Bajo Stock</p>
-                <a href="{{ route('productos.index') }}" class="btn btn-sm btn-outline-rojo mt-2">Revisar stock</a>
-            </div>
-        </div>
-    </div>
+    @include('dashboard._indicador', [
+        'icono' => 'bi-truck',
+        'titulo' => 'Importaciones en recepción',
+        'valor' => $enRecepcion,
+        'enlace' => route('importaciones.index'),
+        'textoEnlace' => 'Ver recepción',
+    ])
 </div>
 
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card card-custom">
-            <div class="card-header">Acciones Rápidas</div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4 mb-3 mb-md-0">
-                        <a href="{{ route('productos.create') }}" class="btn btn-rojo w-100">
-                            Nuevo Producto
-                        </a>
-                    </div>
-                    <div class="col-md-4 mb-3 mb-md-0">
-                        <a href="{{ route('proveedores.create') }}" class="btn btn-negro w-100">
-                            Nuevo Proveedor
-                        </a>
-                    </div>
-                    <div class="col-md-4">
-                        <a href="{{ route('importaciones.create') }}" class="btn btn-outline-dark w-100">
-                            Nueva Importación
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
+<h2 class="h6 text-uppercase text-muted fw-bold mb-3">Accesos rápidos</h2>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <a href="{{ route('ventas.create') }}" class="acceso">
+            <span class="acceso-icono"><i class="bi bi-plus-lg"></i></span>
+            <span><strong>Registrar venta</strong><small>Nueva salida de productos</small></span>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{{ route('productos.index') }}" class="acceso">
+            <span class="acceso-icono"><i class="bi bi-box-seam"></i></span>
+            <span><strong>Catálogo y stock</strong><small>Productos, precios e historial</small></span>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{{ route('proveedores.index') }}" class="acceso">
+            <span class="acceso-icono"><i class="bi bi-people"></i></span>
+            <span><strong>Socios</strong><small>Proveedores y clientes</small></span>
+        </a>
     </div>
 </div>
 @endsection

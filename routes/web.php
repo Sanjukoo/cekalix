@@ -8,6 +8,8 @@ use App\Http\Controllers\ImportacionController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\MermaController;
 use App\Http\Controllers\ConteoFisicoController;
+use App\Http\Controllers\VentaController;
+use App\Http\Controllers\ClienteController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -101,5 +103,45 @@ Route::middleware('auth')->group(function () {
 
         Route::delete('/mermas/{merma}', [MermaController::class, 'destroy'])
             ->name('mermas.destroy');
+    });
+
+    // Registro y consulta de ventas: admin y ventas.
+    Route::middleware('role:admin,ventas')->group(function () {
+
+        Route::get('/ventas', [VentaController::class, 'index'])
+            ->name('ventas.index');
+
+        Route::get('/ventas/crear', [VentaController::class, 'create'])
+            ->name('ventas.create');
+
+        Route::post('/ventas', [VentaController::class, 'store'])
+            ->name('ventas.store');
+
+        Route::get('/ventas/{venta}', [VentaController::class, 'show'])
+            ->name('ventas.show');
+
+        Route::get('/ventas/{venta}/editar', [VentaController::class, 'edit'])
+            ->name('ventas.edit');
+
+        Route::put('/ventas/{venta}', [VentaController::class, 'update'])
+            ->name('ventas.update');
+
+        Route::patch('/ventas/{venta}/anular', [VentaController::class, 'anular'])
+            ->name('ventas.anular');
+
+        Route::get('/ventas/{venta}/comprobante', [VentaController::class, 'comprobante'])
+            ->name('ventas.comprobante');
+
+        // Clientes: se registran y consultan desde ventas.
+        Route::resource('clientes', ClienteController::class)
+            ->except(['show'])
+            ->parameters(['clientes' => 'cliente']);
+    });
+
+    // Ajustes manuales de stock (quedan en el kárdex de la ficha del producto): admin e inventario.
+    Route::middleware('role:admin,inventario')->group(function () {
+
+        Route::post('/productos/{producto}/ajuste', [ProductoController::class, 'ajustar'])
+            ->name('productos.ajustar');
     });
 });

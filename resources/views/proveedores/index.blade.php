@@ -3,6 +3,8 @@
 @section('title', 'Proveedores')
 
 @section('content')
+@include('layouts._hub', ['hubActivo' => 'socios', 'activa' => 'proveedores'])
+
 <div class="row mb-4">
     <div class="col-md-8">
         <h2 class="page-title">Proveedores</h2>

@@ -1,6 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
+@include('layouts._hub', ['hubActivo' => 'recepcion', 'activa' => 'mermas'])
+
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Registro de mermas</h2>

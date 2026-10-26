@@ -66,18 +66,28 @@
                     @enderror
                 </div>
                 <div class="col-md-4">
-                    <label for="stock" class="form-label">Stock <span class="text-danger">*</span></label>
-                    <input type="number" id="stock" name="stock" class="form-control @error('stock') is-invalid @enderror"
-                           value="{{ old('stock', $producto->stock) }}" min="0" required>
-                    @error('stock')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
+                    <label for="stock" class="form-label">Stock actual</label>
+                    <input type="number" id="stock" class="form-control" value="{{ $producto->stock }}" disabled>
+                    <small class="text-muted">
+                        Solo cambia con ventas, cierres de importación o ajustes (ver kárdex).
+                    </small>
                 </div>
                 <div class="col-md-4">
                     <label for="unidades_por_caja" class="form-label">Unidades por Caja <span class="text-danger">*</span></label>
                     <input type="number" id="unidades_por_caja" name="unidades_por_caja" class="form-control @error('unidades_por_caja') is-invalid @enderror"
                            value="{{ old('unidades_por_caja', $producto->unidades_por_caja) }}" min="1" required>
                     @error('unidades_por_caja')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="precio_venta" class="form-label">Precio de venta (S/ por unidad) <span class="text-danger">*</span></label>
+                    <input type="number" id="precio_venta" name="precio_venta" class="form-control @error('precio_venta') is-invalid @enderror"
+                           value="{{ old('precio_venta', $producto->precio_venta) }}" min="0" step="0.01" required>
+                    @error('precio_venta')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
