@@ -32,7 +32,7 @@
         <div class="app-shell">
             <aside class="offcanvas-md offcanvas-start app-sidebar" tabindex="-1" id="menuLateral" aria-label="Menú principal">
                 <div class="offcanvas-header d-md-none">
-                    <span class="fw-bold text-white">Menú</span>
+                    <span class="fw-bold">Menú</span>
                     <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#menuLateral" aria-label="Cerrar"></button>
                 </div>
 

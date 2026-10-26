@@ -704,3 +704,8 @@ body > .container-fluid > .row > .col-12 {
         height: 50px;
     }
 }
+/* reCAPTCHA centrado sobre el botón de ingresar */
+.login-recaptcha {
+    display: flex;
+    justify-content: center;
+}

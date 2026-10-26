@@ -6,6 +6,12 @@
     <link href="{{ asset('css/login.css') }}?v={{ filemtime(public_path('css/login.css')) }}" rel="stylesheet">
 @endsection
 
+@section('scripts')
+    @if(filled(config('services.recaptcha.site_key')))
+        <script src="https://www.google.com/recaptcha/api.js?hl=es" async defer></script>
+    @endif
+@endsection
+
 @section('content')
 
 <div class="login-page">
@@ -129,6 +135,19 @@
                         >
 
                     </div>
+
+
+                    {{-- RECAPTCHA --}}
+                    @if(filled(config('services.recaptcha.site_key')))
+
+                        <div class="mb-4 login-recaptcha">
+                            <div
+                                class="g-recaptcha"
+                                data-sitekey="{{ config('services.recaptcha.site_key') }}"
+                            ></div>
+                        </div>
+
+                    @endif
 
 
                     {{-- BOTÓN --}}
