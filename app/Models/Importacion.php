@@ -11,6 +11,7 @@ class Importacion extends Model
     protected $fillable = [
         'proveedor_id',
         'numero_factura',
+        'archivo_factura',
         'numero_contenedor',
         'fecha_llegada',
         'estado',

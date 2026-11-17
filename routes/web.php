@@ -76,7 +76,18 @@ Route::middleware('auth')->group(function () {
 
         Route::patch('/importaciones/{importacion}/cerrar', [ImportacionController::class, 'cerrar'])
             ->name('importaciones.cerrar');
-    });
+        // Visualizar la factura adjunta de una importación.
+        Route::get('/importaciones/{importacion}/factura', [
+            ImportacionController::class,
+            'verFactura',
+        ])->name('importaciones.factura');
+
+        // Descargar la factura adjunta de una importación.
+        Route::get('/importaciones/{importacion}/factura/descargar', [
+            ImportacionController::class,
+            'descargarFactura',
+        ])->name('importaciones.factura.descargar');
+  });
 
     
     // Registro y consulta de mermas: admin e inventario.

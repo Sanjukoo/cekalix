@@ -9,6 +9,7 @@ use App\Models\ImportacionDetalle;
 use App\Models\MovimientoInventario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class ImportacionController extends Controller
@@ -18,18 +19,18 @@ class ImportacionController extends Controller
         $importaciones = Importacion::with('proveedor', 'detalles.producto')
             ->orderBy('id', 'desc')
             ->paginate(15);
+
         return view('importaciones.index', compact('importaciones'));
     }
 
-    
     public function create()
-   {
+    {
         $proveedores = Proveedor::activos()
             ->orderBy('razon_social')
             ->get();
 
         $productos = Producto::orderBy('codigo')->get();
- 
+
         $codigosPendientes = ImportacionDetalle::whereNull('producto_id')
             ->whereNotNull('producto_codigo')
             ->select('producto_codigo')
@@ -41,20 +42,29 @@ class ImportacionController extends Controller
             'proveedores',
             'productos',
             'codigosPendientes'
-      ));
+        ));
     }
- 
+
     public function store(Request $request)
-   {
+    {
         $validated = $request->validate([
             'proveedor_id' => 'required|exists:proveedores,id',
             'numero_factura' => 'required|string|max:50',
             'numero_contenedor' => 'required|string|max:50',
             'fecha_llegada' => 'required|date',
+
+            // Documento adjunto de la factura
+            'archivo_factura' => 'nullable|file|mimes:pdf,jpg,jpeg,png,webp|max:5120',
+
             'detalles' => 'required|array|min:1',
             'detalles.*.producto_codigo' => 'required|string|max:50',
             'detalles.*.cajas_facturadas' => 'required|integer|min:1',
+
         ], [
+            'archivo_factura.file' => 'El documento adjunto no es válido.',
+            'archivo_factura.mimes' => 'La factura debe ser PDF, JPG, JPEG, PNG o WEBP.',
+            'archivo_factura.max' => 'La factura no debe superar los 5 MB.',
+
             'proveedor_id.required' => 'Debe seleccionar un proveedor.',
             'proveedor_id.exists' => 'El proveedor seleccionado no existe.',
             'numero_factura.required' => 'El número de factura es obligatorio.',
@@ -68,37 +78,47 @@ class ImportacionController extends Controller
             'detalles.*.cajas_facturadas.required' => 'Debe ingresar las cajas facturadas.',
             'detalles.*.cajas_facturadas.integer' => 'Las cajas deben ser un número entero.',
             'detalles.*.cajas_facturadas.min' => 'Debe ingresar al menos una caja.',
-       ]);
+        ]);
 
         // Evitar que un mismo SKU se repita dentro de esta importación.
         $codigos = array_map(
-           fn ($detalle) => strtoupper(trim($detalle['producto_codigo'])),
+            fn ($detalle) => strtoupper(trim($detalle['producto_codigo'])),
             $validated['detalles']
-       );
+        );
 
         if (count($codigos) !== count(array_unique($codigos))) {
             return redirect()->back()
                 ->withInput()
                 ->withErrors([
                     'detalles' => 'No repitas el mismo SKU en una importación. Agrupa sus cajas en una sola fila.',
-               ]);
-       }
+                ]);
+        }
+
+        $rutaFactura = null;
 
         try {
-            $importacion = DB::transaction(function () use ($validated) {
+            // Guardar la factura si se adjuntó un archivo.
+            if ($request->hasFile('archivo_factura')) {
+                $rutaFactura = $request->file('archivo_factura')
+                    ->store('facturas-importaciones', 'local');
+            }
+
+            $importacion = DB::transaction(function () use ($validated, $rutaFactura) {
+
                 $importacion = Importacion::create([
                     'proveedor_id' => $validated['proveedor_id'],
                     'numero_factura' => $validated['numero_factura'],
+                    'archivo_factura' => $rutaFactura,
                     'numero_contenedor' => $validated['numero_contenedor'],
                     'fecha_llegada' => $validated['fecha_llegada'],
                     'estado' => 'En recepción',
-               ]);
+                ]);
 
                 foreach ($validated['detalles'] as $detalle) {
                     $codigo = trim($detalle['producto_codigo']);
 
-                   // Si el producto existe, lo vinculamos.
-                   // Si no existe, el SKU queda pendiente de registro.
+                    // Si el producto existe, lo vinculamos.
+                    // Si no existe, el SKU queda pendiente de registro.
                     $producto = Producto::where('codigo', $codigo)->first();
 
                     ImportacionDetalle::create([
@@ -107,18 +127,24 @@ class ImportacionController extends Controller
                         'producto_codigo' => $codigo,
                         'cajas_facturadas' => $detalle['cajas_facturadas'],
                     ]);
-               }
+                }
 
-               return $importacion;
+                return $importacion;
             });
 
-           return redirect()->route('importaciones.index')
+            return redirect()->route('importaciones.index')
                 ->with(
                     'success',
                     "Importación #{$importacion->id} registrada correctamente (Estado: En recepción)."
-               );
+                );
+
         } catch (\Exception $e) {
             report($e);
+
+            // Eliminar la factura si la importación no pudo registrarse.
+            if (!empty($rutaFactura)) {
+                Storage::disk('local')->delete($rutaFactura);
+            }
 
             return redirect()->back()
                 ->withInput()
@@ -127,19 +153,69 @@ class ImportacionController extends Controller
                     'Error al registrar la importación. Intente nuevamente.'
                 );
         }
-   }
+    }
 
     public function show(Importacion $importacion)
     {
-        $importacion->load('proveedor', 'detalles.producto.categoria', 'detalles.conteoFisico', 'detalles.mermas');
+        $importacion->load(
+            'proveedor',
+            'detalles.producto.categoria',
+            'detalles.conteoFisico',
+            'detalles.mermas'
+        );
+
         return view('importaciones.show', compact('importacion'));
+    }
+
+    // Mostrar la factura en el navegador.
+    public function verFactura(Importacion $importacion)
+    {
+        $rutaFactura = $importacion->archivo_factura;
+
+        // Verificar que la importación tenga una factura adjunta.
+        if (!$rutaFactura || !Storage::disk('local')->exists($rutaFactura)) {
+            abort(404, 'No se encontró la factura de esta importación.');
+        }
+
+        $disco = Storage::disk('local');
+
+        $tipoArchivo = $disco->mimeType($rutaFactura)
+            ?: 'application/octet-stream';
+
+        return response()->file(
+            $disco->path($rutaFactura),
+            [
+                'Content-Type' => $tipoArchivo,
+                'X-Content-Type-Options' => 'nosniff',
+            ]
+        );
+    }
+
+    // Descargar la factura.
+    public function descargarFactura(Importacion $importacion)
+    {
+        $rutaFactura = $importacion->archivo_factura;
+
+        // Verificar que la importación tenga una factura adjunta.
+        if (!$rutaFactura || !Storage::disk('local')->exists($rutaFactura)) {
+            abort(404, 'No se encontró la factura de esta importación.');
+        }
+
+        $extension = pathinfo($rutaFactura, PATHINFO_EXTENSION) ?: 'archivo';
+
+        return Storage::disk('local')->download(
+            $rutaFactura,
+            'factura-importacion-' . $importacion->id . '.' . $extension
+        );
     }
 
     // Cierra la recepción: lo que llegó en buen estado pasa al stock.
     public function cerrar(Importacion $importacion)
     {
         DB::transaction(function () use ($importacion) {
-            $importacion = Importacion::whereKey($importacion->id)->lockForUpdate()->firstOrFail();
+            $importacion = Importacion::whereKey($importacion->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
             if ($importacion->estado !== 'En recepción') {
                 throw ValidationException::withMessages([
@@ -169,9 +245,12 @@ class ImportacionController extends Controller
 
             foreach ($detalles as $detalle) {
                 // Cajas en buen estado = contadas - dañadas; el stock se lleva en unidades.
-                $cajasBuenas = $detalle->conteoFisico->cajas_contadas - (int) $detalle->mermas_sum_cantidad;
+                $cajasBuenas = $detalle->conteoFisico->cajas_contadas
+                    - (int) $detalle->mermas_sum_cantidad;
 
-                $producto = Producto::whereKey($detalle->producto_id)->lockForUpdate()->firstOrFail();
+                $producto = Producto::whereKey($detalle->producto_id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
                 MovimientoInventario::registrar(
                     $producto,

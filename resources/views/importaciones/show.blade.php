@@ -49,7 +49,35 @@
                     <div class="col-md-6">
                         <label class="form-label"><strong>Fecha de Llegada</strong></label>
                         <p class="form-control-plaintext">{{ $importacion->fecha_llegada->format('d/m/Y') }}</p>
+
+                <hr>
+
+                <div class="mb-2">
+                    <label class="form-label">
+                        <strong>Documento de la Factura</strong>
+                    </label>
+
+                    @if($importacion->archivo_factura)
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="{{ route('importaciones.factura', $importacion) }}"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="btn btn-outline-danger">
+                                <i class="bi bi-eye"></i> Ver factura
+                            </a>
+
+                            <a href="{{ route('importaciones.factura.descargar', $importacion) }}"
+                               class="btn btn-outline-secondary">
+                                <i class="bi bi-download"></i> Descargar factura
+                            </a>
+                        </div>
+                    @else
+                        <p class="text-muted mb-0">
+                            No se adjuntó ningún documento para esta importación.
+                        </p>
+                    @endif
                     </div>
+                    
                     <div class="col-md-6">
                         <label class="form-label"><strong>Registrado</strong></label>
                         <p class="form-control-plaintext">{{ $importacion->created_at->format('d/m/Y H:i') }}</p>

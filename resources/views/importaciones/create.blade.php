@@ -12,7 +12,11 @@
 <div class="card card-custom">
     <div class="card-header">Datos de la Importación</div>
     <div class="card-body">
-        <form action="{{ route('importaciones.store') }}" method="POST">
+
+        <form action="{{ route('importaciones.store') }}"
+              method="POST"
+              enctype="multipart/form-data">
+
             @csrf
 
             <h6 class="text-danger mb-3">Datos Generales</h6>
@@ -24,7 +28,8 @@
                     </label>
 
                     <select id="proveedor_id" name="proveedor_id"
-                            class="form-select @error('proveedor_id') is-invalid @enderror" required>
+                            class="form-select @error('proveedor_id') is-invalid @enderror"
+                            required>
                         <option value="">-- Seleccionar proveedor registrado --</option>
                         @foreach($proveedores as $proveedor)
                             <option value="{{ $proveedor->id }}"
@@ -84,6 +89,33 @@
                         <div class="invalid-feedback d-block">{{ $message }}</div>
                     @enderror
                 </div>
+            </div>
+
+            <hr>
+
+            <!-- DOCUMENTO DE LA FACTURA -->
+            <h6 class="text-danger mb-3">Documento de la Factura</h6>
+
+            <div class="mb-4">
+                <label for="archivo_factura" class="form-label">
+                    Adjuntar factura
+                </label>
+
+                <input type="file"
+                       id="archivo_factura"
+                       name="archivo_factura"
+                       class="form-control @error('archivo_factura') is-invalid @enderror"
+                       accept=".pdf,.jpg,.jpeg,.png,.webp">
+
+                <div class="form-text">
+                    Puedes adjuntar la factura recibida en formato PDF o imagen
+                    (JPG, JPEG, PNG o WEBP). Tamaño máximo: 5 MB.
+                    Este campo es opcional.
+                </div>
+
+                @error('archivo_factura')
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                @enderror
             </div>
 
             <hr>
