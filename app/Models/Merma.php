@@ -14,6 +14,7 @@ class Merma extends Model
         'motivo',
         'descripcion',
         'fecha_registro',
+        'imagen',
     ];
 
     protected $casts = [

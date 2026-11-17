@@ -57,7 +57,7 @@
                             <th>Nombre</th>
                             <th>Categoría</th>
                             <th>Proveedor</th>
-                            <th>Stock</th>
+                            <th>Stock (cajas)</th>
                             <th>Unidad/Caja</th>
                             <th>Acciones</th>
                         </tr>
@@ -69,19 +69,36 @@
                                 <td>{{ $producto->nombre }}</td>
                                 <td><span class="badge badge-categoria">{{ $producto->categoria->nombre }}</span></td>
                                 <td>{{ $producto->proveedor->razon_social }}</td>
+
                                 <td>
-                                    @if($producto->stock < 10)
-                                        <span class="badge bg-danger">{{ $producto->stock }}</span>
+                                    @php
+                                        $unidadesPorCaja = max(1, (int) $producto->unidades_por_caja);
+                                        $cajasDisponibles = intdiv((int) $producto->stock, $unidadesPorCaja);
+                                        $unidadesSueltas = (int) $producto->stock % $unidadesPorCaja;
+                                    @endphp
+
+                                    @if($cajasDisponibles < 10)
+                                        <span class="badge bg-danger">{{ $cajasDisponibles }}</span>
                                     @else
-                                        <span class="badge bg-success">{{ $producto->stock }}</span>
+                                        <span class="badge bg-success">{{ $cajasDisponibles }}</span>
+                                    @endif
+
+                                    @if($unidadesSueltas > 0)
+                                        <small class="text-muted d-block">
+                                            + {{ $unidadesSueltas }} unidades sueltas
+                                        </small>
                                     @endif
                                 </td>
+
                                 <td>{{ $producto->unidades_por_caja }}</td>
+
                                 <td>
                                     <div class="acciones-tabla">
                                         <a href="{{ route('productos.show', $producto) }}" class="btn btn-sm btn-outline-dark" title="Ver">Ver</a>
+
                                         @if(auth()->user()->puedeGestionarProductos())
                                             <a href="{{ route('productos.edit', $producto) }}" class="btn btn-sm btn-negro" title="Editar">Editar</a>
+
                                             <form action="{{ route('productos.destroy', $producto) }}" method="POST">
                                                 @csrf
                                                 @method('DELETE')

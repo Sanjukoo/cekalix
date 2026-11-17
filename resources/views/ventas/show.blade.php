@@ -49,20 +49,25 @@
 
 <div class="card card-custom mb-4">
     <div class="card-header">Datos de la venta</div>
+
     <div class="card-body">
         <div class="row">
             <div class="col-md-3 mb-3">
                 <label class="form-label"><strong>Fecha</strong></label>
-                <p class="form-control-plaintext">{{ $venta->fecha_venta->format('d/m/Y') }}</p>
+                <p class="form-control-plaintext">
+                    {{ $venta->fecha_venta->format('d/m/Y') }}
+                </p>
             </div>
 
             <div class="col-md-3 mb-3">
                 <label class="form-label"><strong>Cliente</strong></label>
                 <p class="form-control-plaintext">
                     {{ $venta->nombreCliente() }}
+
                     @if($venta->cliente?->numero_documento)
                         <small class="d-block text-muted">
-                            {{ $venta->cliente->tipo_documento }} {{ $venta->cliente->numero_documento }}
+                            {{ $venta->cliente->tipo_documento }}
+                            {{ $venta->cliente->numero_documento }}
                         </small>
                     @endif
                 </p>
@@ -70,12 +75,16 @@
 
             <div class="col-md-3 mb-3">
                 <label class="form-label"><strong>Registrado por</strong></label>
-                <p class="form-control-plaintext">{{ $venta->usuario->name }}</p>
+                <p class="form-control-plaintext">
+                    {{ $venta->usuario?->name ?? 'Usuario desconocido' }}
+                </p>
             </div>
 
             <div class="col-md-3 mb-3">
-                <label class="form-label"><strong>Total</strong></label>
-                <p class="form-control-plaintext"><strong>S/ {{ number_format($venta->total, 2) }}</strong></p>
+                <label class="form-label"><strong>Total con IGV</strong></label>
+                <p class="form-control-plaintext text-danger">
+                    <strong>S/ {{ number_format($venta->total, 2) }}</strong>
+                </p>
             </div>
         </div>
     </div>
@@ -83,6 +92,7 @@
 
 <div class="card card-custom mb-4">
     <div class="card-header">Productos vendidos</div>
+
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-striped align-middle">
@@ -90,7 +100,9 @@
                     <tr>
                         <th>Código SKU</th>
                         <th>Producto</th>
-                        <th>Cantidad (unidades)</th>
+                        <th>Cajas</th>
+                        <th>Unidades por caja</th>
+                        <th>Total unidades</th>
                         <th>Precio unitario</th>
                         <th>Subtotal</th>
                     </tr>
@@ -99,22 +111,54 @@
                 <tbody>
                     @foreach($venta->detalles as $detalle)
                         <tr>
-                            <td><span class="badge-sku">{{ $detalle->producto->codigo }}</span></td>
-                            <td>{{ $detalle->producto->nombre }}</td>
+                            <td>
+                                <span class="badge-sku">
+                                    {{ $detalle->producto?->codigo ?? 'N/A' }}
+                                </span>
+                            </td>
+
+                            <td>{{ $detalle->producto?->nombre ?? 'Producto no disponible' }}</td>
+
+                            <td>{{ $detalle->cajas ?? '—' }}</td>
+
+                            <td>{{ $detalle->unidades_por_caja ?? '—' }}</td>
+
                             <td>{{ $detalle->cantidad }}</td>
-                            <td>S/ {{ number_format($detalle->precio_unitario, 2) }}</td>
-                            <td>S/ {{ number_format($detalle->subtotal, 2) }}</td>
+
+                            <td>
+                                S/ {{ number_format($detalle->precio_unitario, 2) }}
+                            </td>
+
+                            <td>
+                                S/ {{ number_format($detalle->subtotal, 2) }}
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>
-
-                <tfoot>
-                    <tr>
-                        <th colspan="4" class="text-end">Total</th>
-                        <th>S/ {{ number_format($venta->total, 2) }}</th>
-                    </tr>
-                </tfoot>
             </table>
+        </div>
+
+        <div class="row justify-content-end">
+            <div class="col-md-5">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Subtotal:</span>
+                    <strong>S/ {{ number_format($venta->subtotal, 2) }}</strong>
+                </div>
+
+                <div class="d-flex justify-content-between mb-2">
+                    <span>IGV (18 %):</span>
+                    <strong>S/ {{ number_format($venta->igv, 2) }}</strong>
+                </div>
+
+                <hr>
+
+                <div class="d-flex justify-content-between">
+                    <h5>Total:</h5>
+                    <h5 class="text-danger">
+                        S/ {{ number_format($venta->total, 2) }}
+                    </h5>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -122,9 +166,11 @@
 @unless($venta->estaAnulada())
     <div class="card card-custom border-danger">
         <div class="card-header text-danger">Anular venta</div>
+
         <div class="card-body">
             <p class="text-muted">
-                Anular no borra la venta: queda registrada como anulada y el stock vuelve al inventario.
+                Anular no borra la venta: queda registrada como anulada
+                y el stock vuelve al inventario.
             </p>
 
             <form action="{{ route('ventas.anular', $venta) }}" method="POST"
@@ -134,12 +180,19 @@
 
                 <div class="row g-2 align-items-end">
                     <div class="col-md-8">
-                        <label for="motivo_anulacion" class="form-label">Motivo de la anulación</label>
-                        <input type="text" id="motivo_anulacion" name="motivo_anulacion" maxlength="255"
+                        <label for="motivo_anulacion" class="form-label">
+                            Motivo de la anulación
+                        </label>
+
+                        <input type="text" id="motivo_anulacion"
+                               name="motivo_anulacion" maxlength="255"
                                class="form-control" required>
                     </div>
+
                     <div class="col-md-4">
-                        <button type="submit" class="btn btn-outline-rojo w-100">Anular venta</button>
+                        <button type="submit" class="btn btn-outline-rojo w-100">
+                            Anular venta
+                        </button>
                     </div>
                 </div>
             </form>

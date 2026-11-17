@@ -17,7 +17,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('mermas.store') }}" method="POST">
+            <form action="{{ route('mermas.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
 
                 <div class="mb-3">

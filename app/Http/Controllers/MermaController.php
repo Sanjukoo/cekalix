@@ -7,6 +7,7 @@ use App\Models\Importacion;
 use App\Models\ImportacionDetalle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class MermaController extends Controller
 {
@@ -42,7 +43,10 @@ class MermaController extends Controller
     {
         $validated = $this->validar($request);
 
-        $resultado = DB::transaction(function () use ($validated) {
+        $imagen = $validated['imagen'] ?? null;
+        unset($validated['imagen']);
+
+        $resultado = DB::transaction(function () use ($validated, $imagen) {
             $detalle = $this->bloquearDetalle($validated['importacion_detalle_id']);
 
             if ($error = $this->errorDeDetalle($detalle)) {
@@ -59,6 +63,10 @@ class MermaController extends Controller
                 return [
                     'error' => 'La cantidad dañada supera las cajas recibidas en el conteo físico de este SKU.',
                 ];
+            }
+
+            if ($imagen) {
+                $validated['imagen'] = $imagen->store('mermas', 'public');
             }
 
             Merma::create($validated);
@@ -106,7 +114,17 @@ class MermaController extends Controller
     {
         $validated = $this->validar($request);
 
-        $resultado = DB::transaction(function () use ($validated, $merma) {
+        $imagen = $validated['imagen'] ?? null;
+        unset($validated['imagen']);
+
+        $imagenAnterior = null;
+
+        $resultado = DB::transaction(function () use (
+            $validated,
+            $merma,
+            $imagen,
+            &$imagenAnterior
+        ) {
             $mermaActual = Merma::whereKey($merma->id)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -141,6 +159,12 @@ class MermaController extends Controller
                 ];
             }
 
+            // Si se seleccionó una nueva fotografía, reemplaza la anterior.
+            if ($imagen) {
+                $imagenAnterior = $mermaActual->imagen;
+                $validated['imagen'] = $imagen->store('mermas', 'public');
+            }
+
             $mermaActual->update($validated);
 
             return [
@@ -156,6 +180,11 @@ class MermaController extends Controller
                 ]);
         }
 
+        // Eliminar la fotografía anterior después de actualizar correctamente.
+        if ($imagenAnterior) {
+            Storage::disk('public')->delete($imagenAnterior);
+        }
+
         return redirect()
             ->route('mermas.index')
             ->with('success', 'Merma actualizada correctamente.')
@@ -165,7 +194,9 @@ class MermaController extends Controller
     // Eliminar una merma existente.
     public function destroy(Merma $merma)
     {
-        $resultado = DB::transaction(function () use ($merma) {
+        $imagenAnterior = null;
+
+        $resultado = DB::transaction(function () use ($merma, &$imagenAnterior) {
             $mermaActual = Merma::whereKey($merma->id)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -177,6 +208,8 @@ class MermaController extends Controller
                     'error' => 'No se puede eliminar una merma de una importación cerrada.',
                 ];
             }
+
+            $imagenAnterior = $mermaActual->imagen;
 
             $mermaActual->delete();
 
@@ -194,6 +227,11 @@ class MermaController extends Controller
             return redirect()
                 ->route('mermas.index')
                 ->with('error', $resultado['error']);
+        }
+
+        // Eliminar la fotografía asociada al registro eliminado.
+        if ($imagenAnterior) {
+            Storage::disk('public')->delete($imagenAnterior);
         }
 
         return redirect()
@@ -229,6 +267,16 @@ class MermaController extends Controller
                 'required',
                 'date',
             ],
+            'imagen' => [
+                'nullable',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:2048',
+            ],
+        ], [
+            'imagen.image' => 'El archivo debe ser una imagen.',
+            'imagen.mimes' => 'La imagen debe estar en formato JPG, JPEG, PNG o WEBP.',
+            'imagen.max' => 'La imagen no debe superar los 2 MB.',
         ]);
 
         if ($validated['motivo'] !== 'OTRO') {
@@ -252,7 +300,7 @@ class MermaController extends Controller
             ->get();
     }
 
-    // Bloquea la importación antes que el detalle, en el mismo orden que el conteo y el cierre.
+    // Bloquea la importación antes que el detalle.
     private function bloquearDetalle(int $detalleId): ImportacionDetalle
     {
         $importacionId = ImportacionDetalle::whereKey($detalleId)->value('importacion_id');

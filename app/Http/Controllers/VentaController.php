@@ -14,7 +14,8 @@ use Illuminate\Validation\ValidationException;
 
 class VentaController extends Controller
 {
-    // Mostrar el historial de ventas, anuladas incluidas.
+    private const IGV_PORCENTAJE = 0.18;
+
     public function index()
     {
         $ventas = Venta::with('usuario', 'cliente')
@@ -35,7 +36,7 @@ class VentaController extends Controller
         ]);
     }
 
-    // Registrar una venta y descontar el stock mediante movimientos de inventario.
+    // Registrar una venta y calcular subtotal, IGV y total.
     public function store(Request $request)
     {
         $validated = $this->validar($request);
@@ -44,12 +45,19 @@ class VentaController extends Controller
             $venta = Venta::create([
                 'cliente_id' => $validated['cliente_id'] ?? null,
                 'fecha_venta' => $validated['fecha_venta'],
+                'subtotal' => 0,
+                'igv' => 0,
                 'total' => 0,
                 'estado' => Venta::VIGENTE,
                 'registrado_por' => auth()->id(),
             ]);
 
-            $venta->update(['total' => $this->registrarLineas($venta, $validated['productos'])]);
+            $importes = $this->registrarLineas(
+                $venta,
+                $validated['productos']
+            );
+
+            $venta->update($importes);
 
             return $venta;
         });
@@ -74,7 +82,7 @@ class VentaController extends Controller
                 ->with('error', 'No se puede editar una venta anulada.');
         }
 
-        $venta->load('detalles');
+        $venta->load('detalles.producto');
 
         return view('ventas.edit', [
             'venta' => $venta,
@@ -83,13 +91,15 @@ class VentaController extends Controller
         ]);
     }
 
-    // Editar una venta: devuelve el stock de las líneas anteriores y aplica las nuevas, todo en una transacción.
+    // Editar una venta y actualizar sus movimientos de inventario.
     public function update(Request $request, Venta $venta)
     {
         $validated = $this->validar($request);
 
         DB::transaction(function () use ($validated, $venta) {
-            $ventaActual = Venta::whereKey($venta->id)->lockForUpdate()->firstOrFail();
+            $ventaActual = Venta::whereKey($venta->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
             if ($ventaActual->estaAnulada()) {
                 throw ValidationException::withMessages([
@@ -97,8 +107,11 @@ class VentaController extends Controller
                 ]);
             }
 
+            // Devolver al inventario las unidades de la venta anterior.
             foreach ($ventaActual->detalles()->get() as $detalle) {
-                $producto = Producto::whereKey($detalle->producto_id)->lockForUpdate()->firstOrFail();
+                $producto = Producto::whereKey($detalle->producto_id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
                 MovimientoInventario::registrar(
                     $producto,
@@ -116,7 +129,13 @@ class VentaController extends Controller
                 'fecha_venta' => $validated['fecha_venta'],
             ]);
 
-            $ventaActual->update(['total' => $this->registrarLineas($ventaActual, $validated['productos'])]);
+            // Registrar las nuevas cantidades y calcular los importes.
+            $importes = $this->registrarLineas(
+                $ventaActual,
+                $validated['productos']
+            );
+
+            $ventaActual->update($importes);
         });
 
         return redirect()
@@ -124,7 +143,7 @@ class VentaController extends Controller
             ->with('success', 'Venta actualizada correctamente.');
     }
 
-    // Anular: no se borra. Se devuelve el stock y la venta queda marcada con su motivo.
+    // Anular una venta y devolver las unidades al inventario.
     public function anular(Request $request, Venta $venta)
     {
         $validated = $request->validate([
@@ -132,7 +151,9 @@ class VentaController extends Controller
         ]);
 
         DB::transaction(function () use ($validated, $venta) {
-            $ventaActual = Venta::whereKey($venta->id)->lockForUpdate()->firstOrFail();
+            $ventaActual = Venta::whereKey($venta->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
             if ($ventaActual->estaAnulada()) {
                 throw ValidationException::withMessages([
@@ -141,7 +162,9 @@ class VentaController extends Controller
             }
 
             foreach ($ventaActual->detalles()->get() as $detalle) {
-                $producto = Producto::whereKey($detalle->producto_id)->lockForUpdate()->firstOrFail();
+                $producto = Producto::whereKey($detalle->producto_id)
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
                 MovimientoInventario::registrar(
                     $producto,
@@ -173,6 +196,7 @@ class VentaController extends Controller
             ->download($venta->numero.'.pdf');
     }
 
+    // Validar los datos recibidos del formulario.
     private function validar(Request $request): array
     {
         return $request->validate([
@@ -180,19 +204,28 @@ class VentaController extends Controller
             'fecha_venta' => 'required|date',
             'productos' => 'required|array|min:1',
             'productos.*.producto_id' => 'required|integer|distinct|exists:productos,id',
-            'productos.*.cantidad' => 'required|integer|min:1',
+            'productos.*.cajas' => 'required|integer|min:1',
         ]);
     }
 
-    // Guarda las líneas, registra la salida de stock de cada una y devuelve el total.
-    private function registrarLineas(Venta $venta, array $lineas): float
+    // Convertir cajas a unidades, registrar el inventario y calcular el IGV.
+    private function registrarLineas(Venta $venta, array $lineas): array
     {
-        $total = 0;
+        $subtotalGeneral = 0;
 
         foreach ($lineas as $linea) {
             $producto = Producto::whereKey($linea['producto_id'])
                 ->lockForUpdate()
                 ->firstOrFail();
+
+            $cajas = (int) $linea['cajas'];
+            $unidadesPorCaja = (int) $producto->unidades_por_caja;
+
+            if ($unidadesPorCaja <= 0) {
+                throw ValidationException::withMessages([
+                    'productos' => "El producto {$producto->codigo} no tiene unidades por caja válidas.",
+                ]);
+            }
 
             if ((float) $producto->precio_venta <= 0) {
                 throw ValidationException::withMessages([
@@ -200,32 +233,51 @@ class VentaController extends Controller
                 ]);
             }
 
+            // Convertir las cajas seleccionadas en unidades.
+            $unidades = $cajas * $unidadesPorCaja;
+
             $precioUnitario = (float) $producto->precio_venta;
-            $subtotal = round($linea['cantidad'] * $precioUnitario, 2);
+
+            $subtotal = round($unidades * $precioUnitario, 2);
 
             VentaDetalle::create([
                 'venta_id' => $venta->id,
                 'producto_id' => $producto->id,
-                'cantidad' => $linea['cantidad'],
+                'cantidad' => $unidades,
+                'cajas' => $cajas,
+                'unidades_por_caja' => $unidadesPorCaja,
                 'precio_unitario' => $precioUnitario,
                 'subtotal' => $subtotal,
             ]);
 
+            // Descontar las unidades reales del inventario.
             MovimientoInventario::registrar(
                 $producto,
-                -$linea['cantidad'],
+                -$unidades,
                 'venta',
                 "Venta {$venta->numero}",
                 $venta
             );
 
-            $total += $subtotal;
+            $subtotalGeneral += $subtotal;
         }
 
-        return $total;
+        $subtotalGeneral = round($subtotalGeneral, 2);
+
+        // Calcular el IGV del 18 %.
+        $igv = round($subtotalGeneral * self::IGV_PORCENTAJE, 2);
+
+        // Total final con IGV incluido.
+        $total = round($subtotalGeneral + $igv, 2);
+
+        return [
+            'subtotal' => $subtotalGeneral,
+            'igv' => $igv,
+            'total' => $total,
+        ];
     }
 
-    // Al editar, las unidades de la propia venta también cuentan como disponibles.
+    // Productos con stock, precio y unidades por caja válidos.
     private function productosDisponibles(?Venta $venta = null)
     {
         $enVenta = $venta
@@ -233,6 +285,7 @@ class VentaController extends Controller
             : collect();
 
         return Producto::where('precio_venta', '>', 0)
+            ->where('unidades_por_caja', '>', 0)
             ->where(function ($query) use ($enVenta) {
                 $query->where('stock', '>', 0)
                     ->orWhereIn('id', $enVenta->keys());
@@ -240,7 +293,8 @@ class VentaController extends Controller
             ->orderBy('codigo')
             ->get()
             ->each(function (Producto $producto) use ($enVenta) {
-                $producto->stock_disponible = $producto->stock + ($enVenta[$producto->id] ?? 0);
+                $producto->stock_disponible =
+                    $producto->stock + ($enVenta[$producto->id] ?? 0);
             })
             ->filter(fn (Producto $producto) => $producto->stock_disponible > 0)
             ->values();

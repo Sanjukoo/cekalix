@@ -12,12 +12,16 @@ class VentaDetalle extends Model
         'venta_id',
         'producto_id',
         'cantidad',
+        'cajas',
+        'unidades_por_caja',
         'precio_unitario',
         'subtotal',
     ];
 
     protected $casts = [
         'cantidad' => 'integer',
+        'cajas' => 'integer',
+        'unidades_por_caja' => 'integer',
         'precio_unitario' => 'decimal:2',
         'subtotal' => 'decimal:2',
     ];

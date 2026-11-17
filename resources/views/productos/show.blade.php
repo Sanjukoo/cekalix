@@ -44,12 +44,12 @@
 
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <label class="form-label"><strong>Stock</strong></label>
+                        <label class="form-label"><strong>Stock total (unidades)</strong></label>
                         <p class="form-control-plaintext">
                             @if($producto->stock < 10)
-                                <span class="badge bg-danger">{{ $producto->stock }}</span>
+                                <span class="badge bg-danger">{{ $producto->stock }} unidades</span>
                             @else
-                                <span class="badge bg-success">{{ $producto->stock }}</span>
+                                <span class="badge bg-success">{{ $producto->stock }} unidades</span>
                             @endif
                         </p>
                     </div>

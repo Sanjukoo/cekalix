@@ -16,6 +16,8 @@ class Venta extends Model
     protected $fillable = [
         'cliente_id',
         'fecha_venta',
+        'subtotal',
+        'igv',
         'total',
         'estado',
         'registrado_por',
@@ -25,6 +27,8 @@ class Venta extends Model
 
     protected $casts = [
         'fecha_venta' => 'date',
+        'subtotal' => 'decimal:2',
+        'igv' => 'decimal:2',
         'total' => 'decimal:2',
     ];
 

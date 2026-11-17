@@ -13,9 +13,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('importacion_detalles', function (Blueprint $table) {
-            $table->string('producto_codigo', 50)->nullable()->after('producto_id');
-        });
+        if (!Schema::hasColumn('importacion_detalles', 'producto_codigo')) {
+            Schema::table('importacion_detalles', function (Blueprint $table) {
+                $table->string('producto_codigo', 50)->nullable()->after('producto_id');
+            });
+        }
 
         // Los detalles existentes (p. ej. los del seeder) heredan el código de su producto.
         DB::statement(

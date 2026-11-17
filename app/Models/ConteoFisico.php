@@ -13,6 +13,7 @@ class ConteoFisico extends Model
         'cajas_contadas',
         'diferencia',
         'registrado_por',
+        'imagen',
     ];
 
     protected $casts = [
@@ -22,11 +23,17 @@ class ConteoFisico extends Model
 
     public function detalle()
     {
-        return $this->belongsTo(ImportacionDetalle::class, 'importacion_detalle_id');
+        return $this->belongsTo(
+            ImportacionDetalle::class,
+            'importacion_detalle_id'
+        );
     }
 
     public function usuario()
     {
-        return $this->belongsTo(User::class, 'registrado_por');
+        return $this->belongsTo(
+            User::class,
+            'registrado_por'
+        );
     }
 }

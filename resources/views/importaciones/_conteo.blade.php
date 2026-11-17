@@ -36,6 +36,7 @@
 
             <form action="{{ route('importaciones.conteo.update', $importacion) }}"
                   method="POST"
+                  enctype="multipart/form-data"
                   aria-describedby="ayuda-conteo">
                 @csrf
                 @method('PATCH')
@@ -44,13 +45,14 @@
                     <table class="table table-striped align-middle">
                         <thead>
                             <tr>
-                                <th scope="col">SKU</th>
-                                <th scope="col">Producto</th>
-                                <th scope="col">Cajas Facturadas</th>
-                                <th scope="col">Cajas Contadas</th>
-                                <th scope="col">Diferencia</th>
-                                <th scope="col">Cajas Dañadas</th>
-                                <th scope="col">Unidades a Stock</th>
+                               <th scope="col">SKU</th>
+                               <th scope="col">Producto</th>
+                               <th scope="col">Cajas Facturadas</th>
+                               <th scope="col">Cajas Contadas</th>
+                               <th scope="col">Fotografía</th>
+                               <th scope="col">Diferencia</th>
+                               <th scope="col">Cajas Dañadas</th>
+                               <th scope="col">Unidades a Stock</th>
 
                                 @if($editable)
                                     <th scope="col">Acciones</th>
@@ -155,6 +157,37 @@
                                                 {{ $message }}
                                             </div>
                                         @enderror
+                                    </td>
+
+                                    <td style="min-width: 12rem;">
+
+                                        @if($detalle->conteoFisico?->imagen)
+                                            <div class="mb-2">
+                                                <a href="{{ asset('storage/' . $detalle->conteoFisico->imagen) }}"
+                                                   target="_blank">
+                                                    <img
+                                                        src="{{ asset('storage/' . $detalle->conteoFisico->imagen) }}"
+                                                        alt="Fotografía del conteo {{ $codigo }}"
+                                                        class="img-thumbnail"
+                                                        style="max-width: 120px;"
+                                                    >
+                                                </a>
+                                            </div>
+                                        @endif
+
+                                        @if($editable)
+                                            <input
+                                                type="file"
+                                                name="imagenes[{{ $detalle->id }}]"
+                                                class="form-control form-control-sm"
+                                                accept="image/jpeg,image/png,image/webp"
+                                            >
+
+                                            <small class="text-muted">
+                                                JPG, PNG o WEBP. Máximo 2 MB.
+                                            </small>
+                                        @endif
+
                                     </td>
 
                                     <td>

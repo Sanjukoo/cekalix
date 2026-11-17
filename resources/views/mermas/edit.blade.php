@@ -18,7 +18,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('mermas.update', $merma) }}" method="POST">
+            <form action="{{ route('mermas.update', $merma) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
 
@@ -130,6 +130,39 @@
                         value="{{ old('fecha_registro', $merma->fecha_registro->format('Y-m-d')) }}"
                         required
                     >
+                </div>
+
+                <div class="mb-3">
+                     <label for="imagen" class="form-label">
+                         Fotografía de la merma (opcional)
+                     </label>
+
+                     @if ($merma->imagen)
+                         <div class="mb-2">
+                             <p class="mb-1">Fotografía actual:</p>
+
+                             <img
+                                 src="{{ asset('storage/' . $merma->imagen) }}"
+                                 alt="Fotografía de la merma"
+                                 class="img-thumbnail"
+                                 style="max-width: 250px;"
+                             >
+                         </div>
+                     @endif
+
+                     <input
+                         type="file"
+                         name="imagen"
+                         id="imagen"
+                         class="form-control"
+                         accept="image/jpeg,image/png,image/webp"
+                     >
+
+                     <div class="form-text">
+                         Si selecciona otra fotografía, reemplazará la actual.
+                         Si no selecciona ninguna, se conservará la fotografía existente.
+                         Formatos permitidos: JPG, JPEG, PNG y WEBP. Máximo 2 MB.
+                     </div>
                 </div>
 
                 <button type="submit" class="btn btn-rojo">
