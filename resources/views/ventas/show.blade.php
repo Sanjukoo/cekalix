@@ -173,8 +173,9 @@
                 y el stock vuelve al inventario.
             </p>
 
-            <form action="{{ route('ventas.anular', $venta) }}" method="POST"
-                  onsubmit="return confirm('¿Anular esta venta? El stock se devolverá al inventario.');">
+            <form action="{{ route('ventas.anular', $venta) }}"
+                  method="POST"
+                  data-confirm="¿Anular esta venta? El stock se devolverá al inventario.">
                 @csrf
                 @method('PATCH')
 

@@ -54,10 +54,12 @@
                                 <td>
                                     <div class="acciones-tabla">
                                         <a href="{{ route('proveedores.edit', $proveedor) }}" class="btn btn-sm btn-negro" title="Editar">Editar</a>
-                                        <form action="{{ route('proveedores.destroy', $proveedor) }}" method="POST">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-outline-rojo" onclick="return confirm('¿Está seguro?')" title="Eliminar">Eliminar</button>
+                                        <form action="{{ route('proveedores.destroy', $proveedor) }}"
+                                              method="POST"
+                                              data-confirm="¿Estás seguro de que deseas eliminar este socio?">
+                                           @csrf
+                                           @method('DELETE')
+                                           <button type="submit" class="btn btn-sm btn-outline-rojo" title="Eliminar"> Eliminar </button>
                                         </form>
                                     </div>
                                 </td>

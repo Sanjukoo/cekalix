@@ -141,7 +141,7 @@
                                             <form
                                                 action="{{ route('mermas.destroy', $merma) }}"
                                                 method="POST"
-                                                onsubmit="return confirm('¿Seguro que deseas eliminar esta merma?');"
+                                                data-confirm="¿Estás seguro de que deseas eliminar esta merma?"
                                             >
                                                 @csrf
                                                 @method('DELETE')

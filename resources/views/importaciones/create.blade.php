@@ -15,7 +15,8 @@
 
         <form action="{{ route('importaciones.store') }}"
               method="POST"
-              enctype="multipart/form-data">
+              enctype="multipart/form-data"
+              data-confirm="¿Estás seguro de que deseas registrar esta importación y su factura?">
 
             @csrf
 

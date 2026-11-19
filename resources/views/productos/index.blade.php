@@ -99,10 +99,12 @@
                                         @if(auth()->user()->puedeGestionarProductos())
                                             <a href="{{ route('productos.edit', $producto) }}" class="btn btn-sm btn-negro" title="Editar">Editar</a>
 
-                                            <form action="{{ route('productos.destroy', $producto) }}" method="POST">
+                                            <form action="{{ route('productos.destroy', $producto) }}"
+                                                  method="POST"
+                                                  data-confirm="¿Estás seguro de que deseas eliminar este producto?">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-outline-rojo" onclick="return confirm('¿Está seguro?')" title="Eliminar">Eliminar</button>
+                                                <button type="submit" class="btn btn-sm btn-outline-rojo" title="Eliminar">Eliminar</button>
                                             </form>
                                         @endif
                                     </div>

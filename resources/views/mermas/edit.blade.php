@@ -18,7 +18,10 @@
                 </div>
             @endif
 
-            <form action="{{ route('mermas.update', $merma) }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('mermas.update', $merma) }}"
+                  method="POST"
+                  enctype="multipart/form-data"
+                  data-confirm="¿Estás seguro de que deseas actualizar esta merma?">
                 @csrf
                 @method('PUT')
 

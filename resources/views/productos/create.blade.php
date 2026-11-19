@@ -13,7 +13,8 @@
     <div class="card-header">Datos del Producto</div>
 
     <div class="card-body">
-        <form action="{{ route('productos.store') }}" method="POST" novalidate>
+        <form action="{{ route('productos.store') }}"method="POST" novalidate
+        data-confirm="¿Estás seguro de que deseas registrar o actualizar este producto?">
             @csrf
 
             {{-- Selección de importación y SKU --}}

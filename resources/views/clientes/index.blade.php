@@ -64,11 +64,12 @@
                                     <div class="acciones-tabla">
                                         <a href="{{ route('clientes.edit', $cliente) }}" class="btn btn-sm btn-primary">Editar</a>
 
-                                        <form action="{{ route('clientes.destroy', $cliente) }}" method="POST"
-                                              onsubmit="return confirm('¿Eliminar este cliente?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
+                                        <form action="{{ route('clientes.destroy', $cliente) }}"
+                                              method="POST"
+                                              data-confirm="¿Estás seguro de que deseas eliminar este cliente?">
+                                           @csrf
+                                           @method('DELETE')
+                                           <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
                                         </form>
                                     </div>
                                 </td>

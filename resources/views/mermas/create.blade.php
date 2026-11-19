@@ -17,7 +17,10 @@
                 </div>
             @endif
 
-            <form action="{{ route('mermas.store') }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('mermas.store') }}"
+                  method="POST"
+                  enctype="multipart/form-data"
+                  data-confirm="¿Estás seguro de que deseas registrar esta merma?">
                 @csrf
 
                 <div class="mb-3">
@@ -152,6 +155,24 @@
                         value="{{ old('fecha_registro', now()->format('Y-m-d')) }}"
                         required
                     >
+                </div>
+                <div class="mb-3">
+                     <label for="imagen" class="form-label">
+                         Fotografía de la merma (opcional)
+                     </label>
+
+                     <input
+                         type="file"
+                         name="imagen"
+                         id="imagen"
+                         class="form-control"
+                         accept="image/jpeg,image/png,image/webp"
+                     >
+
+                      <div class="form-text">
+                         Puede adjuntar una fotografía como evidencia del daño.
+                         Formatos permitidos: JPG, JPEG, PNG y WEBP. Máximo 2 MB.
+                     </div>
                 </div>
 
                 <div class="alert alert-info" id="resumen_cajas" style="display: none;">
