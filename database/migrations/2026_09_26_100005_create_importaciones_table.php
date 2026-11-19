@@ -8,15 +8,22 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('importaciones', function (Blueprint $table) {
-            $table->string('archivo_factura')->nullable()->after('numero_factura');
+        Schema::create('importaciones', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('proveedor_id')->constrained('proveedores')->onDelete('restrict');
+            $table->string('numero_factura', 50);
+            $table->string('numero_contenedor', 50);
+            $table->date('fecha_llegada');
+            $table->string('estado', 30)->default('En recepción');
+            $table->timestamps();
+
+            $table->index('proveedor_id');
+            $table->index('fecha_llegada');
         });
     }
 
     public function down(): void
     {
-        Schema::table('importaciones', function (Blueprint $table) {
-            $table->dropColumn('archivo_factura');
-        });
+        Schema::dropIfExists('importaciones');
     }
 };
