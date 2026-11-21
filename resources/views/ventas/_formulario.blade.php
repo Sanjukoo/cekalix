@@ -5,34 +5,16 @@
 @endif
 
 @php
+    // Al editar, cada línea conserva su modalidad: cajas vendidas o unidades sueltas.
     $lineasVenta = $venta
-        ? $venta->detalles->map(function ($d) {
-            $unidadesPorCaja = (int) ($d->unidades_por_caja ?: $d->producto?->unidades_por_caja);
-
-            $cajas = $d->cajas;
-
-            // Para ventas antiguas, solo calculamos las cajas
-            // cuando las unidades forman cajas completas.
-            if ($cajas === null && $unidadesPorCaja > 0 && $d->cantidad % $unidadesPorCaja === 0) {
-                $cajas = intdiv($d->cantidad, $unidadesPorCaja);
-            }
-
-            return [
-                'producto_id' => $d->producto_id,
-                'cajas' => $cajas ?? '',
-            ];
-        })->values()->all()
-        : [['producto_id' => '', 'cajas' => '']];
+        ? $venta->detalles->map(fn ($d) => [
+            'producto_id' => $d->producto_id,
+            'modalidad' => $d->modalidad(),
+            'cantidad' => $d->esPorCaja() ? $d->cajas : $d->cantidad,
+        ])->values()->all()
+        : [['producto_id' => '', 'modalidad' => '', 'cantidad' => '']];
 
     $lineasIniciales = old('productos', $lineasVenta);
-
-    $ventaConLineasAntiguas = $venta
-        && $venta->detalles->contains(function ($d) {
-            $unidadesPorCaja = (int) ($d->unidades_por_caja ?: $d->producto?->unidades_por_caja);
-
-            return $d->cajas === null
-                && ($unidadesPorCaja <= 0 || $d->cantidad % $unidadesPorCaja !== 0);
-        });
 @endphp
 
 <div class="card card-custom">
@@ -50,15 +32,17 @@
             </div>
         @endif
 
-        @if($ventaConLineasAntiguas)
-            <div class="alert alert-warning">
-                Esta venta contiene detalles registrados anteriormente por unidades.
-                Algunas cantidades no equivalen a cajas completas. Revisa y completa
-                las cantidades en cajas antes de actualizar la venta.
-            </div>
-        @endif
-
-        <form action="{{ $action }}" method="POST" id="formulario-venta">
+        <form action="{{ $action }}" method="POST" id="formulario-venta"
+              @if($venta)
+                  data-confirm="Se guardarán los cambios de la venta {{ $venta->numero }}. El stock de las líneas anteriores se devolverá y se descontará el de las nuevas."
+                  data-confirm-titulo="Confirmar edición de venta"
+                  data-confirm-boton="Guardar cambios"
+              @else
+                  data-confirm="Revisa los datos de la venta. Al confirmar se descontará el stock de los productos."
+                  data-confirm-titulo="Confirmar registro de venta"
+                  data-confirm-boton="Registrar venta"
+              @endif
+        >
             @csrf
 
             @if(isset($venta))
@@ -113,12 +97,12 @@
             <h6 class="text-danger mb-3">Productos Vendidos</h6>
 
             <p class="text-muted">
-                Ingresa la cantidad de cajas que deseas vender. El sistema calculará
-                automáticamente las unidades y el stock restante. El stock solo se
-                actualizará cuando registres la venta.
+                Elige si cada producto se vende <strong>por caja</strong> o <strong>por unidad</strong>
+                e ingresa la cantidad. El sistema calculará automáticamente las unidades
+                y el stock restante. El stock solo se actualizará cuando registres la venta.
             </p>
 
-            <div id="productos-container">
+            <div id="productos-container" data-resumen-grupo="Productos">
                 @foreach($lineasIniciales as $i => $linea)
                     @include('ventas._fila', [
                         'indice' => $i,
@@ -148,19 +132,19 @@
                 <div class="col-md-5">
                     <div class="d-flex justify-content-between mb-2">
                         <span>Subtotal:</span>
-                        <strong id="subtotal-venta">S/ 0.00</strong>
+                        <strong id="subtotal-venta" data-resumen-valor="Subtotal">S/ 0.00</strong>
                     </div>
 
                     <div class="d-flex justify-content-between mb-2">
                         <span>IGV (18 %):</span>
-                        <strong id="igv-venta">S/ 0.00</strong>
+                        <strong id="igv-venta" data-resumen-valor="IGV (18 %)">S/ 0.00</strong>
                     </div>
 
                     <hr>
 
                     <div class="d-flex justify-content-between mb-3">
                         <h4 class="mb-0">Total:</h4>
-                        <h4 class="mb-0 text-danger" id="total-venta">S/ 0.00</h4>
+                        <h4 class="mb-0 text-danger" id="total-venta" data-resumen-valor="Total">S/ 0.00</h4>
                     </div>
                 </div>
             </div>
@@ -193,11 +177,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const porcentajeIGV = 0.18;
 
+    function redondear(valor) {
+        return Math.round((valor + Number.EPSILON) * 100) / 100;
+    }
+
     function obtenerDatosFila(fila) {
         const select = fila.querySelector('.producto-select');
         const opcion = select.options[select.selectedIndex];
 
-        const cajasInput = fila.querySelector('.cajas-input');
+        // '' = todavía no se eligió si es por caja o por unidad.
+        const modalidad = fila.querySelector('.modalidad-select').value;
+        const porCaja = modalidad === 'caja';
+        const cantidad = Number(fila.querySelector('.cantidad-input').value || 0);
 
         if (!opcion || !opcion.value) {
             return {
@@ -209,42 +200,64 @@ document.addEventListener('DOMContentLoaded', function () {
         const precio = Number(opcion.dataset.precio || 0);
         const stock = Number(opcion.dataset.stock || 0);
         const unidadesPorCaja = Number(opcion.dataset.unidades || 0);
-        const cajas = Number(cajasInput.value || 0);
 
-        const unidades = cajas * unidadesPorCaja;
+        // Por caja se multiplica por las unidades de la caja; por unidad se usa tal cual.
+        const unidades = modalidad === ''
+            ? 0
+            : (porCaja ? cantidad * unidadesPorCaja : cantidad);
         const stockRestante = stock - unidades;
 
         return {
+            modalidad: modalidad,
+            porCaja: porCaja,
             precio: precio,
             stock: stock,
             unidadesPorCaja: unidadesPorCaja,
-            cajas: cajas,
+            cantidad: cantidad,
             unidades: unidades,
             stockRestante: stockRestante,
-            subtotal: unidades * precio,
-            insuficiente: cajas > 0 && (
-                unidadesPorCaja <= 0 || stockRestante < 0
+            // Igual que el servidor: cada línea se redondea a 2 decimales.
+            subtotal: redondear(unidades * precio),
+            insuficiente: unidades > 0 && (
+                (porCaja && unidadesPorCaja <= 0) || stockRestante < 0
             )
         };
     }
 
     function actualizarFila(fila) {
         const select = fila.querySelector('.producto-select');
-        const cajasInput = fila.querySelector('.cajas-input');
+        const selectModalidad = fila.querySelector('.modalidad-select');
+        const opcionCaja = selectModalidad.querySelector('option[value="caja"]');
+        const cantidadInput = fila.querySelector('.cantidad-input');
 
+        const etiquetaCantidad = fila.querySelector('.cantidad-etiqueta');
+        const ayudaModalidad = fila.querySelector('.ayuda-modalidad');
         const disponible = fila.querySelector('.disponible');
         const unidadesTotal = fila.querySelector('.unidades-total');
         const stockRestante = fila.querySelector('.stock-restante');
         const subtotalFila = fila.querySelector('.subtotal-fila');
+        const unidadesResumen = fila.querySelector('.unidades-resumen');
 
+        const modalidad = selectModalidad.value;
+        const porCaja = modalidad === 'caja';
         const opcion = select.options[select.selectedIndex];
 
+        etiquetaCantidad.textContent = modalidad === ''
+            ? 'Cantidad'
+            : (porCaja ? 'Cajas' : 'Unidades');
+        cantidadInput.placeholder = porCaja ? 'Ej: 2' : 'Ej: 25';
+
+        stockRestante.classList.remove('text-danger', 'text-success');
+
         if (!opcion || !opcion.value) {
-            cajasInput.removeAttribute('max');
+            opcionCaja.textContent = 'Por caja';
+            ayudaModalidad.innerHTML = '&nbsp;';
+            unidadesResumen.textContent = '';
+            cantidadInput.removeAttribute('max');
 
             disponible.textContent = 'Selecciona un producto';
-            unidadesTotal.textContent = 'Unidades: 0';
-            stockRestante.textContent = 'Stock restante: 0';
+            unidadesTotal.textContent = '0';
+            stockRestante.innerHTML = '&nbsp;';
 
             subtotalFila.textContent = 'S/ 0.00';
 
@@ -260,30 +273,32 @@ document.addEventListener('DOMContentLoaded', function () {
             ? Math.floor(datos.stock / datos.unidadesPorCaja)
             : 0;
 
-        if (datos.unidadesPorCaja > 0) {
-            cajasInput.max = maxCajas;
-        } else {
-            cajasInput.removeAttribute('max');
-        }
+        // La opción muestra cuántas unidades trae la caja de este producto.
+        opcionCaja.textContent = 'Por caja (' + datos.unidadesPorCaja + ' u.)';
 
         disponible.textContent =
             'Disponible: ' + datos.stock + ' unidades (' +
             maxCajas + ' cajas completas)';
 
-        unidadesTotal.textContent =
-            'Unidades a vender: ' + datos.unidades;
+        if (modalidad === '') {
+            ayudaModalidad.textContent = 'Elige cómo vender';
+            cantidadInput.removeAttribute('max');
+        } else {
+            ayudaModalidad.textContent = porCaja
+                ? 'Caja de ' + datos.unidadesPorCaja + ' u. · máx. ' + maxCajas
+                : 'Máx. ' + datos.stock + ' unidades';
+
+            cantidadInput.max = porCaja ? maxCajas : datos.stock;
+        }
+
+        unidadesTotal.textContent = datos.unidades;
+        unidadesResumen.textContent = datos.unidades || '';
 
         stockRestante.textContent =
-            'Stock restante: ' + datos.stockRestante + ' unidades';
+            'Quedan ' + datos.stockRestante + ' en stock';
 
-        stockRestante.classList.toggle(
-            'text-danger',
-            datos.insuficiente
-        );
-
-        stockRestante.classList.toggle(
-            'text-success',
-            !datos.insuficiente
+        stockRestante.classList.add(
+            datos.insuficiente ? 'text-danger' : 'text-success'
         );
 
         subtotalFila.textContent =

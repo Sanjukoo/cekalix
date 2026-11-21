@@ -100,8 +100,8 @@
                     <tr>
                         <th>Código SKU</th>
                         <th>Producto</th>
-                        <th>Cajas</th>
-                        <th>Unidades por caja</th>
+                        <th>Vendido por</th>
+                        <th>Cantidad</th>
                         <th>Total unidades</th>
                         <th>Precio unitario</th>
                         <th>Subtotal</th>
@@ -119,9 +119,9 @@
 
                             <td>{{ $detalle->producto?->nombre ?? 'Producto no disponible' }}</td>
 
-                            <td>{{ $detalle->cajas ?? '—' }}</td>
+                            <td>{{ $detalle->descripcionModalidad() }}</td>
 
-                            <td>{{ $detalle->unidades_por_caja ?? '—' }}</td>
+                            <td>{{ $detalle->descripcionCantidad() }}</td>
 
                             <td>{{ $detalle->cantidad }}</td>
 
@@ -175,7 +175,15 @@
 
             <form action="{{ route('ventas.anular', $venta) }}"
                   method="POST"
-                  data-confirm="¿Anular esta venta? El stock se devolverá al inventario.">
+                  data-confirm="¿Anular esta venta? El stock se devolverá al inventario y la venta quedará registrada como anulada."
+                  data-confirm-titulo="Confirmar anulación de venta"
+                  data-confirm-boton="Anular venta"
+                  data-confirm-datos="{{ json_encode([
+                      'Venta' => $venta->numero,
+                      'Cliente' => $venta->nombreCliente(),
+                      'Fecha' => $venta->fecha_venta->format('d/m/Y'),
+                      'Total' => 'S/ '.number_format($venta->total, 2),
+                  ]) }}">
                 @csrf
                 @method('PATCH')
 

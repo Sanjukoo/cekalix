@@ -232,10 +232,6 @@ body {
     padding: 2rem clamp(1rem, 3vw, 2.5rem);
 }
 
-.app-invitado {
-    min-height: 100vh;
-}
-
 /* ---------- Pestañas de grupos relacionados (socios, recepción) ---------- */
 
 .app-tabs {
@@ -282,18 +278,6 @@ body {
     font-size: 1.55rem;
     font-weight: 700;
     letter-spacing: -0.01em;
-}
-
-.stat-number {
-    margin-bottom: 0.25rem;
-    color: var(--ck-negro);
-    font-size: 1.6rem;
-    font-weight: 700;
-    line-height: 1.1;
-}
-
-.stat-number.alerta {
-    color: var(--ck-rojo);
 }
 
 /* ---------- Indicadores y accesos del panel ---------- */
@@ -435,10 +419,6 @@ body {
 
 .card-custom.border-danger {
     border-color: #f1c4cc !important;
-}
-
-.card-custom.border-warning {
-    border-color: #f5d68a !important;
 }
 
 /* ---------- Botones ---------- */
@@ -680,10 +660,6 @@ body {
     color: #1e6b2e;
 }
 
-.rol-usuario {
-    display: none;
-}
-
 /* ---------- Alertas ---------- */
 
 .alert {
@@ -728,4 +704,168 @@ body {
     height: 120px;
     width: auto;
     margin: 0 auto 0.75rem;
+}
+
+/* ---------- Ventana de confirmación ---------- */
+
+#modalConfirmacion .modal-content {
+    border: 0;
+    border-radius: var(--ck-radio);
+    box-shadow: var(--ck-sombra-alta);
+}
+
+#modalConfirmacion .modal-header {
+    border-bottom: 3px solid var(--ck-rojo);
+}
+
+#modalConfirmacion .modal-title {
+    font-weight: 700;
+}
+
+.confirmacion-mensaje {
+    margin-bottom: 0;
+    font-weight: 500;
+}
+
+.confirmacion-resumen {
+    margin-top: 1rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--ck-borde);
+    border-radius: var(--ck-radio-chico);
+    background-color: var(--ck-fondo);
+}
+
+.confirmacion-datos {
+    display: grid;
+    grid-template-columns: minmax(8rem, max-content) 1fr;
+    gap: 0.35rem 1rem;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.confirmacion-datos dt {
+    color: var(--ck-texto-suave);
+    font-weight: 500;
+}
+
+.confirmacion-datos dd {
+    margin: 0;
+    color: var(--ck-texto);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.confirmacion-grupo {
+    margin-top: 0.85rem;
+}
+
+.confirmacion-grupo:first-child {
+    margin-top: 0;
+}
+
+.confirmacion-subtitulo {
+    margin-bottom: 0.4rem;
+    color: var(--ck-rojo);
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.confirmacion-tabla {
+    background-color: var(--ck-superficie);
+    font-size: 0.85rem;
+}
+
+.confirmacion-tabla th {
+    color: var(--ck-texto-suave);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.confirmacion-totales {
+    margin-top: 0.85rem;
+    padding-top: 0.65rem;
+    border-top: 1px dashed var(--ck-borde-fuerte);
+}
+
+.confirmacion-totales dt:last-of-type,
+.confirmacion-totales dd:last-of-type {
+    color: var(--ck-rojo);
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+@media (max-width: 575.98px) {
+    .confirmacion-datos {
+        grid-template-columns: 1fr;
+        gap: 0.1rem;
+    }
+
+    .confirmacion-datos dd {
+        margin-bottom: 0.4rem;
+    }
+}
+
+/* ---------- Filtros del catálogo ---------- */
+
+.filtro-categorias {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filtro-categorias-titulo {
+    margin-right: 0.25rem;
+    color: var(--ck-texto-suave);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.filtro-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.35rem 0.5rem 0.35rem 0.85rem;
+    border: 1px solid var(--ck-borde-fuerte);
+    border-radius: 999px;
+    background-color: var(--ck-superficie);
+    color: var(--ck-texto);
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.filtro-chip:hover,
+.filtro-chip:focus-visible {
+    border-color: var(--ck-rojo);
+    color: var(--ck-rojo);
+}
+
+.filtro-chip.activo {
+    border-color: var(--ck-rojo);
+    background-color: var(--ck-rojo);
+    color: #ffffff;
+}
+
+.filtro-chip.vacio {
+    opacity: 0.55;
+}
+
+.filtro-chip-total {
+    min-width: 1.6rem;
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    background-color: var(--ck-fondo);
+    color: var(--ck-texto-suave);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.filtro-chip.activo .filtro-chip-total {
+    background-color: rgba(255, 255, 255, 0.22);
+    color: #ffffff;
 }

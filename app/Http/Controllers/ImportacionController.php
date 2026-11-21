@@ -9,7 +9,6 @@ use App\Models\ImportacionDetalle;
 use App\Models\MovimientoInventario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class ImportacionController extends Controller
@@ -142,9 +141,7 @@ class ImportacionController extends Controller
             report($e);
 
             // Eliminar la factura si la importación no pudo registrarse.
-            if (!empty($rutaFactura)) {
-                Storage::disk('local')->delete($rutaFactura);
-            }
+            $this->eliminarArchivo($rutaFactura);
 
             return redirect()->back()
                 ->withInput()
@@ -170,40 +167,16 @@ class ImportacionController extends Controller
     // Mostrar la factura en el navegador.
     public function verFactura(Importacion $importacion)
     {
-        $rutaFactura = $importacion->archivo_factura;
-
-        // Verificar que la importación tenga una factura adjunta.
-        if (!$rutaFactura || !Storage::disk('local')->exists($rutaFactura)) {
-            abort(404, 'No se encontró la factura de esta importación.');
-        }
-
-        $disco = Storage::disk('local');
-
-        $tipoArchivo = $disco->mimeType($rutaFactura)
-            ?: 'application/octet-stream';
-
-        return response()->file(
-            $disco->path($rutaFactura),
-            [
-                'Content-Type' => $tipoArchivo,
-                'X-Content-Type-Options' => 'nosniff',
-            ]
-        );
+        return $this->responderArchivo($importacion->archivo_factura);
     }
 
     // Descargar la factura.
     public function descargarFactura(Importacion $importacion)
     {
         $rutaFactura = $importacion->archivo_factura;
+        $extension = pathinfo((string) $rutaFactura, PATHINFO_EXTENSION) ?: 'archivo';
 
-        // Verificar que la importación tenga una factura adjunta.
-        if (!$rutaFactura || !Storage::disk('local')->exists($rutaFactura)) {
-            abort(404, 'No se encontró la factura de esta importación.');
-        }
-
-        $extension = pathinfo($rutaFactura, PATHINFO_EXTENSION) ?: 'archivo';
-
-        return Storage::disk('local')->download(
+        return $this->responderArchivo(
             $rutaFactura,
             'factura-importacion-' . $importacion->id . '.' . $extension
         );

@@ -204,11 +204,18 @@ class VentaController extends Controller
             'fecha_venta' => 'required|date',
             'productos' => 'required|array|min:1',
             'productos.*.producto_id' => 'required|integer|distinct|exists:productos,id',
-            'productos.*.cajas' => 'required|integer|min:1',
+            'productos.*.modalidad' => 'required|in:'.VentaDetalle::POR_CAJA.','.VentaDetalle::POR_UNIDAD,
+            'productos.*.cantidad' => 'required|integer|min:1',
+        ], [
+            'productos.*.modalidad.required' => 'Indica si cada producto se vende por caja o por unidad.',
+            'productos.*.modalidad.in' => 'La venta debe ser por caja o por unidad.',
+            'productos.*.cantidad.required' => 'Ingresa la cantidad de cada producto.',
+            'productos.*.cantidad.integer' => 'La cantidad debe ser un número entero.',
+            'productos.*.cantidad.min' => 'La cantidad debe ser al menos 1.',
         ]);
     }
 
-    // Convertir cajas a unidades, registrar el inventario y calcular el IGV.
+    // Convertir cada línea a unidades, registrar el inventario y calcular el IGV.
     private function registrarLineas(Venta $venta, array $lineas): array
     {
         $subtotalGeneral = 0;
@@ -218,10 +225,11 @@ class VentaController extends Controller
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $cajas = (int) $linea['cajas'];
+            $cantidad = (int) $linea['cantidad'];
+            $porCaja = $linea['modalidad'] === VentaDetalle::POR_CAJA;
             $unidadesPorCaja = (int) $producto->unidades_por_caja;
 
-            if ($unidadesPorCaja <= 0) {
+            if ($porCaja && $unidadesPorCaja <= 0) {
                 throw ValidationException::withMessages([
                     'productos' => "El producto {$producto->codigo} no tiene unidades por caja válidas.",
                 ]);
@@ -233,8 +241,10 @@ class VentaController extends Controller
                 ]);
             }
 
-            // Convertir las cajas seleccionadas en unidades.
-            $unidades = $cajas * $unidadesPorCaja;
+            // Por caja: la cantidad son cajas y se convierte a unidades.
+            // Por unidad: la cantidad ya son unidades y no se guardan cajas.
+            $cajas = $porCaja ? $cantidad : null;
+            $unidades = $porCaja ? $cantidad * $unidadesPorCaja : $cantidad;
 
             $precioUnitario = (float) $producto->precio_venta;
 

@@ -11,7 +11,10 @@
 
 <div class="card card-custom">
     <div class="card-body">
-        <form action="{{ route('clientes.store') }}" method="POST">
+        <form action="{{ route('clientes.store') }}" method="POST"
+              data-confirm="Revisa los datos del cliente antes de registrarlo."
+              data-confirm-titulo="Confirmar registro de cliente"
+              data-confirm-boton="Guardar cliente">
             @csrf
 
             @include('clientes._campos')

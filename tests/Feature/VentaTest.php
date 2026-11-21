@@ -50,16 +50,18 @@ class VentaTest extends TestCase
         $this->registrar([
             'cliente_id' => $cliente->id,
             'productos' => [
-                ['producto_id' => $bisagra->id, 'cantidad' => 50],
-                ['producto_id' => $corredera->id, 'cantidad' => 4],
+                ['producto_id' => $bisagra->id, 'modalidad' => 'unidad', 'cantidad' => 50],
+                ['producto_id' => $corredera->id, 'modalidad' => 'unidad', 'cantidad' => 4],
             ],
         ])->assertSessionHasNoErrors();
 
         $venta = Venta::firstOrFail();
 
         $this->assertSame($cliente->id, $venta->cliente_id);
-        // 50 × 4.20 + 4 × 12.50 = 260.00
-        $this->assertSame('260.00', number_format((float) $venta->total, 2, '.', ''));
+        // 50 × 4.20 + 4 × 12.50 = 260.00; IGV 18 % = 46.80; total = 306.80
+        $this->assertSame('260.00', number_format((float) $venta->subtotal, 2, '.', ''));
+        $this->assertSame('46.80', number_format((float) $venta->igv, 2, '.', ''));
+        $this->assertSame('306.80', number_format((float) $venta->total, 2, '.', ''));
         $this->assertSame(2, $venta->detalles()->count());
         $this->assertSame(50, $bisagra->fresh()->stock);
         $this->assertSame(16, $corredera->fresh()->stock);
@@ -70,7 +72,7 @@ class VentaTest extends TestCase
         $producto = $this->producto('BIS-2', 10, 4.20);
         $this->actingAs(User::factory()->create(['role' => 'ventas']));
 
-        $this->registrar(['productos' => [['producto_id' => $producto->id, 'cantidad' => 2]]])
+        $this->registrar(['productos' => [['producto_id' => $producto->id, 'modalidad' => 'unidad', 'cantidad' => 2]]])
             ->assertSessionHasNoErrors();
 
         $producto->update(['precio_venta' => 9.99]);
@@ -85,7 +87,7 @@ class VentaTest extends TestCase
         $producto = $this->producto('PIS-1', 5, 18.00);
         $this->actingAs(User::factory()->create(['role' => 'ventas']));
 
-        $this->registrar(['productos' => [['producto_id' => $producto->id, 'cantidad' => 6]]])
+        $this->registrar(['productos' => [['producto_id' => $producto->id, 'modalidad' => 'unidad', 'cantidad' => 6]]])
             ->assertSessionHasErrors('stock');
 
         $this->assertSame(0, Venta::count());
@@ -100,8 +102,8 @@ class VentaTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => 'ventas']));
 
         $this->registrar(['productos' => [
-            ['producto_id' => $bien->id, 'cantidad' => 3],
-            ['producto_id' => $mal->id, 'cantidad' => 2],
+            ['producto_id' => $bien->id, 'modalidad' => 'unidad', 'cantidad' => 3],
+            ['producto_id' => $mal->id, 'modalidad' => 'unidad', 'cantidad' => 2],
         ]])->assertSessionHasErrors('stock');
 
         $this->assertSame(0, Venta::count());
@@ -113,7 +115,7 @@ class VentaTest extends TestCase
         $producto = $this->producto('CER-1', 10, 0);
         $this->actingAs(User::factory()->create(['role' => 'ventas']));
 
-        $this->registrar(['productos' => [['producto_id' => $producto->id, 'cantidad' => 1]]])
+        $this->registrar(['productos' => [['producto_id' => $producto->id, 'modalidad' => 'unidad', 'cantidad' => 1]]])
             ->assertSessionHasErrors('productos');
 
         $this->assertSame(0, Venta::count());
@@ -125,8 +127,8 @@ class VentaTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => 'ventas']));
 
         $this->registrar(['productos' => [
-            ['producto_id' => $producto->id, 'cantidad' => 1],
-            ['producto_id' => $producto->id, 'cantidad' => 2],
+            ['producto_id' => $producto->id, 'modalidad' => 'unidad', 'cantidad' => 1],
+            ['producto_id' => $producto->id, 'modalidad' => 'unidad', 'cantidad' => 2],
         ]])->assertSessionHasErrors('productos.1.producto_id');
 
         $this->assertSame(0, Venta::count());
@@ -161,7 +163,7 @@ class VentaTest extends TestCase
     {
         $producto = $this->producto('BIS-6', 10, 4.20);
         $this->actingAs(User::factory()->create(['role' => 'ventas']));
-        $this->registrar(['productos' => [['producto_id' => $producto->id, 'cantidad' => 1]]])
+        $this->registrar(['productos' => [['producto_id' => $producto->id, 'modalidad' => 'unidad', 'cantidad' => 1]]])
             ->assertSessionHasNoErrors();
 
         $this->actingAs(User::factory()->create(['role' => 'admin']))
@@ -169,5 +171,120 @@ class VentaTest extends TestCase
             ->assertSessionHas('error');
 
         $this->assertNotNull(Producto::find($producto->id));
+    }
+
+    public function test_vender_por_caja_convierte_las_cajas_a_unidades(): void
+    {
+        $producto = $this->producto('CAJ-1', 100, 2.00); // caja de 10 unidades
+        $this->actingAs(User::factory()->create(['role' => 'ventas']));
+
+        $this->registrar(['productos' => [
+            ['producto_id' => $producto->id, 'modalidad' => 'caja', 'cantidad' => 3],
+        ]])->assertSessionHasNoErrors();
+
+        $detalle = VentaDetalle::firstOrFail();
+        $this->assertSame(3, $detalle->cajas);
+        $this->assertSame(30, $detalle->cantidad);
+        $this->assertSame(10, $detalle->unidades_por_caja);
+        $this->assertSame('60.00', number_format((float) $detalle->subtotal, 2, '.', ''));
+        $this->assertSame(70, $producto->fresh()->stock);
+        $this->assertSame('Por caja (10 u.)', $detalle->descripcionModalidad());
+        $this->assertSame('3 cajas', $detalle->descripcionCantidad());
+    }
+
+    public function test_vender_por_unidad_no_guarda_cajas(): void
+    {
+        $producto = $this->producto('UNI-1', 100, 2.00);
+        $this->actingAs(User::factory()->create(['role' => 'ventas']));
+
+        $this->registrar(['productos' => [
+            ['producto_id' => $producto->id, 'modalidad' => 'unidad', 'cantidad' => 7],
+        ]])->assertSessionHasNoErrors();
+
+        $detalle = VentaDetalle::firstOrFail();
+        $this->assertNull($detalle->cajas);
+        $this->assertSame(7, $detalle->cantidad);
+        $this->assertSame(93, $producto->fresh()->stock);
+        $this->assertSame('Por unidad', $detalle->descripcionModalidad());
+        $this->assertSame('7 unidades', $detalle->descripcionCantidad());
+    }
+
+    public function test_una_venta_puede_mezclar_lineas_por_caja_y_por_unidad(): void
+    {
+        $caja = $this->producto('MIX-1', 100, 1.00);
+        $unidad = $this->producto('MIX-2', 100, 3.00);
+        $this->actingAs(User::factory()->create(['role' => 'ventas']));
+
+        $this->registrar(['productos' => [
+            ['producto_id' => $caja->id, 'modalidad' => 'caja', 'cantidad' => 2],
+            ['producto_id' => $unidad->id, 'modalidad' => 'unidad', 'cantidad' => 5],
+        ]])->assertSessionHasNoErrors();
+
+        $venta = Venta::firstOrFail();
+        // 2 cajas × 10 × 1.00 = 20.00 y 5 × 3.00 = 15.00; subtotal 35.00, IGV 6.30, total 41.30
+        $this->assertSame('35.00', number_format((float) $venta->subtotal, 2, '.', ''));
+        $this->assertSame('6.30', number_format((float) $venta->igv, 2, '.', ''));
+        $this->assertSame('41.30', number_format((float) $venta->total, 2, '.', ''));
+        $this->assertSame(80, $caja->fresh()->stock);
+        $this->assertSame(95, $unidad->fresh()->stock);
+
+        $this->get('/ventas/'.$venta->id)->assertOk()
+            ->assertSee('Por caja (10 u.)')->assertSee('2 cajas')
+            ->assertSee('Por unidad')->assertSee('5 unidades');
+    }
+
+    public function test_por_caja_respeta_el_stock_en_unidades(): void
+    {
+        $producto = $this->producto('STK-1', 25, 1.00); // alcanza para 2 cajas completas
+        $this->actingAs(User::factory()->create(['role' => 'ventas']));
+
+        $this->registrar(['productos' => [
+            ['producto_id' => $producto->id, 'modalidad' => 'caja', 'cantidad' => 3],
+        ]])->assertSessionHasErrors('stock');
+
+        $this->assertSame(0, Venta::count());
+        $this->assertSame(25, $producto->fresh()->stock);
+
+        // Por unidad sí se pueden vender las 25 unidades, incluidas las 5 sueltas.
+        $this->registrar(['productos' => [
+            ['producto_id' => $producto->id, 'modalidad' => 'unidad', 'cantidad' => 25],
+        ]])->assertSessionHasNoErrors();
+
+        $this->assertSame(0, $producto->fresh()->stock);
+    }
+
+    public function test_exige_una_modalidad_valida(): void
+    {
+        $producto = $this->producto('MOD-1', 100, 1.00);
+        $this->actingAs(User::factory()->create(['role' => 'ventas']));
+
+        $this->registrar(['productos' => [
+            ['producto_id' => $producto->id, 'cantidad' => 1],
+        ]])->assertSessionHasErrors('productos.0.modalidad');
+
+        $this->registrar(['productos' => [
+            ['producto_id' => $producto->id, 'modalidad' => 'docena', 'cantidad' => 1],
+        ]])->assertSessionHasErrors('productos.0.modalidad');
+
+        $this->assertSame(0, Venta::count());
+    }
+
+    public function test_al_editar_cada_linea_conserva_su_modalidad(): void
+    {
+        $caja = $this->producto('EDT-1', 100, 1.00);
+        $unidad = $this->producto('EDT-2', 100, 1.00);
+        $this->actingAs(User::factory()->create(['role' => 'admin']));
+
+        $this->registrar(['productos' => [
+            ['producto_id' => $caja->id, 'modalidad' => 'caja', 'cantidad' => 4],
+            ['producto_id' => $unidad->id, 'modalidad' => 'unidad', 'cantidad' => 9],
+        ]])->assertSessionHasNoErrors();
+
+        $html = $this->get('/ventas/'.Venta::firstOrFail()->id.'/editar')->assertOk()->getContent();
+
+        $this->assertMatchesRegularExpression('/value="caja"\s+selected/', $html);
+        $this->assertMatchesRegularExpression('/value="unidad"\s+selected/', $html);
+        $this->assertMatchesRegularExpression('/name="productos\[0\]\[cantidad\]"[^>]*value="4"/s', $html);
+        $this->assertMatchesRegularExpression('/name="productos\[1\]\[cantidad\]"[^>]*value="9"/s', $html);
     }
 }

@@ -20,6 +20,11 @@
 <div class="card card-custom mb-4">
     <div class="card-body">
         <form action="{{ route('productos.index') }}" method="GET">
+            {{-- Conserva la categoría elegida al buscar --}}
+            @if($categoriaActual)
+                <input type="hidden" name="categoria" value="{{ $categoriaActual->id }}">
+            @endif
+
             <div class="row g-2">
                 <div class="col-md-9">
                     <input
@@ -43,8 +48,55 @@
                 </div>
             </div>
         </form>
+
+        @if($categorias->isNotEmpty())
+            @php
+                // Los filtros conservan la búsqueda escrita.
+                $filtroUrl = fn ($categoriaId = null) => route('productos.index', array_filter([
+                    'buscar' => $buscar !== '' ? $buscar : null,
+                    'categoria' => $categoriaId,
+                ]));
+            @endphp
+
+            <nav class="filtro-categorias mt-3" aria-label="Filtrar por categoría">
+                <span class="filtro-categorias-titulo">Categoría:</span>
+
+                <a href="{{ $filtroUrl() }}"
+                   class="filtro-chip {{ $categoriaActual ? '' : 'activo' }}"
+                   @if(!$categoriaActual) aria-current="true" @endif>
+                    Todas
+                    <span class="filtro-chip-total">{{ $conteoPorCategoria->sum() }}</span>
+                </a>
+
+                @foreach($categorias as $categoria)
+                    @php
+                        $totalCategoria = (int) ($conteoPorCategoria[$categoria->id] ?? 0);
+                        $activa = $categoriaActual?->id === $categoria->id;
+                    @endphp
+
+                    <a href="{{ $filtroUrl($categoria->id) }}"
+                       class="filtro-chip {{ $activa ? 'activo' : '' }} {{ $totalCategoria === 0 && !$activa ? 'vacio' : '' }}"
+                       @if($activa) aria-current="true" @endif>
+                        {{ $categoria->nombre }}
+                        <span class="filtro-chip-total">{{ $totalCategoria }}</span>
+                    </a>
+                @endforeach
+            </nav>
+        @endif
     </div>
 </div>
+
+@if($categoriaActual || $buscar !== '')
+    <p class="text-muted mb-3">
+        {{ $productos->total() }} {{ $productos->total() === 1 ? 'producto' : 'productos' }}
+        @if($categoriaActual)
+            en <strong>{{ $categoriaActual->nombre }}</strong>
+        @endif
+        @if($buscar !== '')
+            que coinciden con «<strong>{{ $buscar }}</strong>»
+        @endif
+    </p>
+@endif
 
 <div class="card card-custom">
     <div class="card-body">
@@ -101,7 +153,15 @@
 
                                             <form action="{{ route('productos.destroy', $producto) }}"
                                                   method="POST"
-                                                  data-confirm="¿Estás seguro de que deseas eliminar este producto?">
+                                                  data-confirm="¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer."
+                                                  data-confirm-titulo="Confirmar eliminación"
+                                                  data-confirm-boton="Eliminar producto"
+                                                  data-confirm-datos="{{ json_encode([
+                                                      'Código' => $producto->codigo,
+                                                      'Producto' => $producto->nombre,
+                                                      'Categoría' => $producto->categoria->nombre,
+                                                      'Stock actual' => $producto->stock.' unidades',
+                                                  ]) }}">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-sm btn-outline-rojo" title="Eliminar">Eliminar</button>
@@ -119,7 +179,16 @@
                 {{ $productos->links() }}
             </div>
         @else
-            <p class="text-center text-muted py-4">No hay productos registrados.</p>
+            @if($categoriaActual || $buscar !== '')
+                <div class="text-center text-muted py-4">
+                    <p class="mb-2">No se encontraron productos con estos filtros.</p>
+                    <a href="{{ route('productos.index') }}" class="btn btn-sm btn-outline-secondary">
+                        Ver todo el catálogo
+                    </a>
+                </div>
+            @else
+                <p class="text-center text-muted py-4">No hay productos registrados.</p>
+            @endif
         @endif
     </div>
 </div>

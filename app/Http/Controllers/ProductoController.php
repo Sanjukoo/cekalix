@@ -6,19 +6,23 @@ use App\Models\Producto;
 use App\Models\ImportacionDetalle;
 use App\Models\MovimientoInventario;
 use App\Models\Categoria;
-use App\Models\AtributoProducto;
 use App\Models\Proveedor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class ProductoController extends Controller
 {
     public function index(Request $request)
    {
-        $buscar = trim($request->input('buscar', ''));
+        $buscar = trim((string) $request->input('buscar', ''));
 
-        $productos = Producto::with('categoria', 'proveedor')
+        $categorias = Categoria::orderBy('nombre')->get();
+
+        // Solo se filtra por una categoría que exista; cualquier otro valor muestra todas.
+        $categoriaActual = $categorias->firstWhere('id', (int) $request->input('categoria'));
+
+        // Productos que coinciden con la búsqueda (sin filtrar aún por categoría).
+        $coincidencias = Producto::query()
             ->when($buscar !== '', function ($query) use ($buscar) {
                 $query->where(function ($q) use ($buscar) {
                     $q->where('codigo', 'like', "%{$buscar}%")
@@ -29,11 +33,28 @@ class ProductoController extends Controller
                                 ->orWhere('valor', 'like', "%{$buscar}%");
                         });
                 });
-            })
+            });
+
+        // Cantidad de productos por categoría para los botones de filtro.
+        $conteoPorCategoria = (clone $coincidencias)
+            ->selectRaw('categoria_id, COUNT(*) as total')
+            ->groupBy('categoria_id')
+            ->pluck('total', 'categoria_id');
+
+        $productos = (clone $coincidencias)
+            ->with('categoria', 'proveedor')
+            ->when($categoriaActual, fn ($query) => $query->where('categoria_id', $categoriaActual->id))
+            ->orderBy('codigo')
             ->paginate(15)
             ->withQueryString();
 
-        return view('productos.index', compact('productos', 'buscar'));
+        return view('productos.index', compact(
+            'productos',
+            'buscar',
+            'categorias',
+            'categoriaActual',
+            'conteoPorCategoria'
+        ));
     }
     
     public function create()
@@ -58,9 +79,12 @@ class ProductoController extends Controller
            ->orderByDesc('id')
            ->get();
 
+        $atributosPorCategoria = $this->atributosPorCategoria($categorias);
+
         return view('productos.create', compact(
           'categorias',
-          'detallesPendientes'
+          'detallesPendientes',
+          'atributosPorCategoria'
        ));
    }
 
@@ -132,7 +156,7 @@ class ProductoController extends Controller
             ->update(['producto_id' => $producto->id]);
 
         // Guardar o actualizar los atributos sin duplicar sus claves.
-        $this->guardarAtributos($request, $producto);
+        $this->guardarAtributos($request, $producto, $producto->obtenerAtributos());
     });
 
     return redirect()
@@ -167,7 +191,15 @@ class ProductoController extends Controller
             ->orderBy('razon_social')
             ->get();
         $atributos = $producto->obtenerAtributos();
-        return view('productos.edit', compact('producto', 'categorias', 'proveedores', 'atributos'));
+        $atributosPorCategoria = $this->atributosPorCategoria($categorias);
+
+        return view('productos.edit', compact(
+            'producto',
+            'categorias',
+            'proveedores',
+            'atributos',
+            'atributosPorCategoria'
+        ));
     }
 
     public function update(Request $request, Producto $producto)
@@ -183,11 +215,13 @@ class ProductoController extends Controller
         ]);
 
         DB::transaction(function () use ($request, $validated, $producto) {
+            $valoresAnteriores = $producto->obtenerAtributos();
+
             $producto->update($validated);
 
             // Reemplazar los atributos anteriores por los de la categoría actual
             $producto->atributos()->delete();
-            $this->guardarAtributos($request, $producto);
+            $this->guardarAtributos($request, $producto, $valoresAnteriores);
         });
 
         return redirect()->route('productos.show', $producto)->with('success', 'Producto actualizado correctamente.');
@@ -229,24 +263,61 @@ class ProductoController extends Controller
         return redirect()->route('productos.index')->with('success', 'Producto eliminado correctamente.');
     }
 
-    // Guarda los atributos que define la categoría del producto
-    
-   private function guardarAtributos(Request $request, Producto $producto): void
-  {
-       $categoria = Categoria::with('atributos')
-           ->find($producto->categoria_id);
+    /*
+     * Guarda los atributos que define la categoría del producto.
+     * Si el atributo tiene lista de opciones, el valor debe ser una de ellas;
+     * se acepta también el valor que el producto ya tenía, para no perderlo.
+     */
+    private function guardarAtributos(Request $request, Producto $producto, array $valoresAnteriores = []): void
+    {
+        $categoria = Categoria::with('atributos')->find($producto->categoria_id);
+        $errores = [];
 
-       foreach ($categoria->atributos as $atributo) {
-           $campo = Str::slug($atributo->nombre);
-           $valor = $request->input("atributo_$campo");
+        foreach ($categoria->atributos as $atributo) {
+            $campo = $atributo->campo();
+            $valor = trim((string) $request->input("atributo_$campo", ''));
 
-           if ($valor !== null && $valor !== '') {
-               $producto->atributos()->updateOrCreate(
-                   ['clave' => $campo],
-                   ['valor' => $valor]
-              );
-           }
-       }
+            if ($valor === '') {
+                continue;
+            }
+
+            if (mb_strlen($valor) > 255) {
+                $errores["atributo_$campo"] = "El valor de {$atributo->nombre} es demasiado largo.";
+                continue;
+            }
+
+            $permitidos = array_merge(
+                $atributo->opciones ?? [],
+                isset($valoresAnteriores[$campo]) ? [$valoresAnteriores[$campo]] : []
+            );
+
+            if ($atributo->tieneOpciones() && !in_array($valor, $permitidos, true)) {
+                $errores["atributo_$campo"] = "Elige un valor de la lista para {$atributo->nombre}.";
+                continue;
+            }
+
+            $producto->atributos()->updateOrCreate(
+                ['clave' => $campo],
+                ['valor' => $valor]
+            );
+        }
+
+        if ($errores) {
+            // Se lanza dentro de la transacción, así que no queda nada guardado a medias.
+            throw \Illuminate\Validation\ValidationException::withMessages($errores);
+        }
+    }
+
+    // Atributos de cada categoría (por slug) para dibujar los campos del formulario.
+    private function atributosPorCategoria($categorias): array
+    {
+        return $categorias->mapWithKeys(fn (Categoria $categoria) => [
+            $categoria->slug => $categoria->atributos->map(fn ($atributo) => [
+                'nombre' => $atributo->nombre,
+                'campo' => $atributo->campo(),
+                'opciones' => $atributo->opciones ?? [],
+            ])->values()->all(),
+        ])->all();
     }
 
     public function listarAjax()

@@ -12,7 +12,10 @@
 <div class="card card-custom">
     <div class="card-header">Actualizar Datos</div>
     <div class="card-body">
-        <form action="{{ route('productos.update', $producto) }}" method="POST" novalidate>
+        <form action="{{ route('productos.update', $producto) }}" method="POST" novalidate
+              data-confirm="Se guardarán los cambios del producto {{ $producto->codigo }}."
+              data-confirm-titulo="Confirmar edición de producto"
+              data-confirm-boton="Guardar cambios">
             @csrf
             @method('PUT')
 
@@ -111,60 +114,40 @@
     </div>
 </div>
 
-<script>
-    const atributosPorCategoria = @json(
-        $categorias->mapWithKeys(function ($categoria) {
-            return [
-                $categoria->slug => $categoria->atributos->map(function ($atributo) {
-                    return [
-                        'nombre' => $atributo->nombre,
-                        'campo' => \Illuminate\Support\Str::slug($atributo->nombre)
-                    ];
-                })
-            ];
-        })
+<script src="{{ asset('js/atributos-producto.js') }}?v={{ filemtime(public_path('js/atributos-producto.js')) }}"></script>
+@php
+    // Valores guardados del producto; si hubo un error de validación, manda lo que se envió.
+    $valoresAtributos = array_merge(
+        $atributos,
+        collect(old())
+            ->filter(fn ($valor, $clave) => str_starts_with($clave, 'atributo_'))
+            ->mapWithKeys(fn ($valor, $clave) => [substr($clave, strlen('atributo_')) => $valor])
+            ->all()
     );
+@endphp
+<script>
+    // Atributos de cada categoría con su lista de opciones (si la tiene).
+    const atributosPorCategoria = {{ \Illuminate\Support\Js::from($atributosPorCategoria) }};
 
-    const atributosActuales = @json((object) $atributos);
+    const atributosActuales = {{ \Illuminate\Support\Js::from((object) $valoresAtributos) }};
 
     function actualizarAtributos() {
         const selectElement = document.getElementById('categoria_id');
         const selectedOption = selectElement.options[selectElement.selectedIndex];
         const categoriaSlug = selectedOption.dataset.slug;
-
         const container = document.getElementById('atributos-container');
-        container.innerHTML = '';
 
-        if (categoriaSlug && atributosPorCategoria[categoriaSlug]) {
-            const titulo = document.createElement('h6');
-            titulo.className = 'text-danger';
-            titulo.textContent = 'Atributos de ' + selectedOption.text.trim();
-
-            const fila = document.createElement('div');
-            fila.className = 'row';
-
-            // Se arma con el DOM para que los valores guardados no se interpreten como HTML
-            atributosPorCategoria[categoriaSlug].forEach(atributo => {
-                const columna = document.createElement('div');
-                columna.className = 'col-md-6 mb-3';
-
-                const label = document.createElement('label');
-                label.className = 'form-label';
-                label.htmlFor = 'atributo_' + atributo.campo;
-                label.textContent = atributo.nombre;
-
-                const input = document.createElement('input');
-                input.type = 'text';
-                input.className = 'form-control';
-                input.id = input.name = 'atributo_' + atributo.campo;
-                input.value = atributosActuales[atributo.campo] || '';
-
-                columna.append(label, input);
-                fila.append(columna);
-            });
-
-            container.append(titulo, fila);
+        if (!categoriaSlug) {
+            container.replaceChildren();
+            return;
         }
+
+        CekalixAtributos.dibujar(
+            container,
+            selectedOption.text.trim(),
+            atributosPorCategoria[categoriaSlug],
+            atributosActuales
+        );
     }
 
     document.addEventListener('DOMContentLoaded', actualizarAtributos);

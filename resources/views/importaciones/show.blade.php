@@ -49,35 +49,7 @@
                     <div class="col-md-6">
                         <label class="form-label"><strong>Fecha de Llegada</strong></label>
                         <p class="form-control-plaintext">{{ $importacion->fecha_llegada->format('d/m/Y') }}</p>
-
-                <hr>
-
-                <div class="mb-2">
-                    <label class="form-label">
-                        <strong>Documento de la Factura</strong>
-                    </label>
-
-                    @if($importacion->archivo_factura)
-                        <div class="d-flex flex-wrap gap-2">
-                            <a href="{{ route('importaciones.factura', $importacion) }}"
-                               target="_blank"
-                               rel="noopener noreferrer"
-                               class="btn btn-outline-danger">
-                                <i class="bi bi-eye"></i> Ver factura
-                            </a>
-
-                            <a href="{{ route('importaciones.factura.descargar', $importacion) }}"
-                               class="btn btn-outline-secondary">
-                                <i class="bi bi-download"></i> Descargar factura
-                            </a>
-                        </div>
-                    @else
-                        <p class="text-muted mb-0">
-                            No se adjuntó ningún documento para esta importación.
-                        </p>
-                    @endif
                     </div>
-                    
                     <div class="col-md-6">
                         <label class="form-label"><strong>Registrado</strong></label>
                         <p class="form-control-plaintext">{{ $importacion->created_at->format('d/m/Y H:i') }}</p>
@@ -86,6 +58,49 @@
             </div>
         </div>
 
+        <div class="card card-custom mb-3">
+            <div class="card-header">Documento de la Factura</div>
+            <div class="card-body">
+                @if($importacion->archivo_factura)
+                    @php
+                        $urlFactura = route('importaciones.factura', $importacion);
+                        $esPdfFactura = strtolower(pathinfo($importacion->archivo_factura, PATHINFO_EXTENSION)) === 'pdf';
+                    @endphp
+
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <a href="{{ $urlFactura }}"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="btn btn-outline-danger">
+                            <i class="bi bi-box-arrow-up-right"></i> Abrir en otra pestaña
+                        </a>
+
+                        <a href="{{ route('importaciones.factura.descargar', $importacion) }}"
+                           class="btn btn-outline-secondary">
+                            <i class="bi bi-download"></i> Descargar factura
+                        </a>
+                    </div>
+
+                    @if($esPdfFactura)
+                        <iframe src="{{ $urlFactura }}"
+                                title="Factura de la importación #{{ $importacion->id }}"
+                                class="w-100 border rounded"
+                                style="height: 70vh; min-height: 420px;"></iframe>
+                    @else
+                        <a href="{{ $urlFactura }}" target="_blank" rel="noopener noreferrer">
+                            <img src="{{ $urlFactura }}"
+                                 alt="Factura de la importación #{{ $importacion->id }}"
+                                 class="img-fluid border rounded"
+                                 style="max-height: 70vh;">
+                        </a>
+                    @endif
+                @else
+                    <p class="text-muted mb-0">
+                        No se adjuntó ningún documento para esta importación.
+                    </p>
+                @endif
+            </div>
+        </div>
     </div>
 
     <div class="col-md-4">

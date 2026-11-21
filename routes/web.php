@@ -87,7 +87,11 @@ Route::middleware('auth')->group(function () {
             ImportacionController::class,
             'descargarFactura',
         ])->name('importaciones.factura.descargar');
-  });
+
+        // Fotografía de evidencia del conteo físico de un SKU.
+        Route::get('/conteos/{conteo}/imagen', [ConteoFisicoController::class, 'imagen'])
+            ->name('conteos.imagen');
+    });
 
     
     // Registro y consulta de mermas: admin e inventario.
@@ -101,6 +105,10 @@ Route::middleware('auth')->group(function () {
 
         Route::post('/mermas', [MermaController::class, 'store'])
             ->name('mermas.store');
+
+        // Fotografía de evidencia de una merma.
+        Route::get('/mermas/{merma}/imagen', [MermaController::class, 'imagen'])
+            ->name('mermas.imagen');
     });
 
     // Edición y eliminación de mermas: solo administrador.

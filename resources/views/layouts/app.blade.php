@@ -133,91 +133,34 @@
             </div>
         </div>
     @endauth
-    
-       <div class="modal fade" id="modalConfirmacion" tabindex="-1"
-            aria-labelledby="tituloConfirmacion" aria-hidden="true">
 
-           <div class="modal-dialog modal-dialog-centered">
-               <div class="modal-content">
+    {{-- Ventana de confirmación compartida (ver public/js/confirmacion.js) --}}
+    <div class="modal fade" id="modalConfirmacion" tabindex="-1"
+         aria-labelledby="tituloConfirmacion" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="tituloConfirmacion">Confirmar acción</h5>
+                    <button type="button" class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Cerrar"></button>
+                </div>
 
-                   <div class="modal-header">
-                       <h5 class="modal-title" id="tituloConfirmacion">Confirmar acción</h5>
+                <div class="modal-body">
+                    <p class="confirmacion-mensaje" id="mensajeConfirmacion">¿Estás seguro de realizar esta acción?</p>
+                    <div id="resumenConfirmacion" class="confirmacion-resumen" hidden></div>
+                </div>
 
-                       <button type="button" class="btn-close"
-                               data-bs-dismiss="modal"
-                               aria-label="Cerrar"></button>
-                   </div>
-
-                   <div class="modal-body" id="mensajeConfirmacion">¿Estás seguro de realizar esta acción?</div>
-
-                   <div class="modal-footer">
-                       <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"> Cancelar </button>
-
-                       <button type="button" class="btn btn-primary" id="btnAceptarConfirmacion"> Aceptar </button>
-                   </div>
-
-               </div>
-           </div>
-       </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-rojo" id="btnAceptarConfirmacion">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    
-<script>
-// Confirmación de acciones en CEKALIX
-document.addEventListener('DOMContentLoaded', function () {
-
-    const modalElemento = document.getElementById('modalConfirmacion');
-
-    if (!modalElemento) return;
-
-    const modal = new bootstrap.Modal(modalElemento);
-
-    const mensaje = document.getElementById('mensajeConfirmacion');
-    const btnAceptar = document.getElementById('btnAceptarConfirmacion');
-
-    let formularioPendiente = null;
-
-    // Detectar el envío de formularios que solicitan confirmación
-    document.addEventListener('submit', function (e) {
-
-        const formulario = e.target;
-
-        if (!formulario.matches('form[data-confirm]')) return;
-
-        if (formulario.dataset.confirmado === 'true') return;
-
-        e.preventDefault();
-
-        formularioPendiente = formulario;
-
-        mensaje.textContent = formulario.dataset.confirm;
-
-        modal.show();
-    });
-
-    // Ejecutar la acción cuando se pulsa Aceptar
-    btnAceptar.addEventListener('click', function () {
-
-        if (!formularioPendiente) return;
-
-        const formulario = formularioPendiente;
-
-        formulario.dataset.confirmado = 'true';
-
-        formularioPendiente = null;
-
-        modal.hide();
-
-        formulario.requestSubmit();
-    });
-
-    // Limpiar la referencia cuando se cierra el modal
-    modalElemento.addEventListener('hidden.bs.modal', function () {
-        formularioPendiente = null;
-    });
-
-});
-</script>
+    <script src="{{ asset('js/confirmacion.js') }}?v={{ filemtime(public_path('js/confirmacion.js')) }}"></script>
 
     @yield('scripts')
 </body>

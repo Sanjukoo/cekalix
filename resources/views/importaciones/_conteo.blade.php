@@ -37,7 +37,14 @@
             <form action="{{ route('importaciones.conteo.update', $importacion) }}"
                   method="POST"
                   enctype="multipart/form-data"
-                  aria-describedby="ayuda-conteo">
+                  aria-describedby="ayuda-conteo"
+                  data-confirm="Se guardará el conteo físico de cada SKU. Revisa las diferencias antes de confirmar."
+                  data-confirm-titulo="Confirmar conteo físico"
+                  data-confirm-boton="Guardar conteo"
+                  data-confirm-datos="{{ json_encode([
+                      'Importación' => '#'.$importacion->id,
+                      'Contenedor' => $importacion->numero_contenedor,
+                  ]) }}">
                 @csrf
                 @method('PATCH')
 
@@ -60,7 +67,7 @@
                             </tr>
                         </thead>
 
-                        <tbody>
+                        <tbody data-resumen-grupo="Conteo por SKU">
                             @foreach($importacion->detalles as $detalle)
                                 @php
                                     $codigo = $detalle->producto_codigo
@@ -104,10 +111,11 @@
                                 @endphp
 
                                 <tr data-conteo-fila
+                                    data-resumen-fila
                                     data-facturadas="{{ $detalle->cajas_facturadas }}">
 
                                     <th scope="row">
-                                        <span class="badge-sku">{{ $codigo }}</span>
+                                        <span class="badge-sku" data-resumen-valor="SKU">{{ $codigo }}</span>
                                     </th>
 
                                     <td>
@@ -125,7 +133,7 @@
                                     </td>
 
                                     <td>
-                                        <strong>{{ $detalle->cajas_facturadas }}</strong>
+                                        <strong data-resumen-valor="Facturadas">{{ $detalle->cajas_facturadas }}</strong>
                                     </td>
 
                                     <td style="min-width: 9rem;">
@@ -137,6 +145,7 @@
                                         <input type="number"
                                                id="conteo-{{ $detalle->id }}"
                                                name="conteos[{{ $detalle->id }}]"
+                                               data-resumen="Contadas"
                                                class="form-control @error('conteos.'.$detalle->id) is-invalid @enderror"
                                                value="{{ $valor }}"
                                                min="0"
@@ -162,11 +171,16 @@
                                     <td style="min-width: 12rem;">
 
                                         @if($detalle->conteoFisico?->imagen)
+                                            @php
+                                                $urlFotoConteo = route('conteos.imagen', $detalle->conteoFisico)
+                                                    . '?v=' . $detalle->conteoFisico->updated_at?->timestamp;
+                                            @endphp
                                             <div class="mb-2">
-                                                <a href="{{ asset('storage/' . $detalle->conteoFisico->imagen) }}"
-                                                   target="_blank">
+                                                <a href="{{ $urlFotoConteo }}"
+                                                   target="_blank"
+                                                   rel="noopener noreferrer">
                                                     <img
-                                                        src="{{ asset('storage/' . $detalle->conteoFisico->imagen) }}"
+                                                        src="{{ $urlFotoConteo }}"
                                                         alt="Fotografía del conteo {{ $codigo }}"
                                                         class="img-thumbnail"
                                                         style="max-width: 120px;"
@@ -179,6 +193,7 @@
                                             <input
                                                 type="file"
                                                 name="imagenes[{{ $detalle->id }}]"
+                                                data-resumen="Foto nueva"
                                                 class="form-control form-control-sm"
                                                 accept="image/jpeg,image/png,image/webp"
                                             >
@@ -194,6 +209,7 @@
                                         <output for="conteo-{{ $detalle->id }}"
                                                 class="badge text-bg-{{ $color }}"
                                                 data-conteo-diferencia
+                                                data-resumen-valor="Diferencia"
                                                 aria-live="polite">
                                             {{ $resultado }}
                                         </output>
@@ -254,9 +270,40 @@
                     <div class="alert alert-danger" role="alert">{{ $message }}</div>
                 @enderror
 
+                @php
+                    $detallesCierre = $importacion->detalles;
+                    $sinConteo = $detallesCierre->filter(fn ($d) => !$d->conteoFisico)->count();
+                    $sinProducto = $detallesCierre->filter(fn ($d) => !$d->producto)->count();
+                    $cajasBuenas = $detallesCierre->sum(fn ($d) => $d->conteoFisico
+                        ? max(0, $d->conteoFisico->cajas_contadas - $d->mermas->sum('cantidad'))
+                        : 0);
+                    $unidadesCierre = $detallesCierre->sum(fn ($d) => $d->conteoFisico && $d->producto
+                        ? max(0, $d->conteoFisico->cajas_contadas - $d->mermas->sum('cantidad')) * $d->producto->unidades_por_caja
+                        : 0);
+
+                    $datosCierre = [
+                        'Importación' => '#'.$importacion->id,
+                        'Contenedor' => $importacion->numero_contenedor,
+                        'SKU' => $detallesCierre->count(),
+                        'Cajas dañadas' => $detallesCierre->sum(fn ($d) => $d->mermas->sum('cantidad')),
+                        'Cajas en buen estado' => $cajasBuenas,
+                        'Unidades que entrarán al stock' => $unidadesCierre,
+                    ];
+
+                    if ($sinConteo || $sinProducto) {
+                        $datosCierre['Pendientes'] = trim(
+                            ($sinConteo ? $sinConteo.' SKU sin conteo. ' : '')
+                            .($sinProducto ? $sinProducto.' SKU sin producto registrado.' : '')
+                        );
+                    }
+                @endphp
+
                 <form action="{{ route('importaciones.cerrar', $importacion) }}"
                       method="POST"
-                      onsubmit="return confirm('¿Cerrar la recepción y actualizar el stock? Esta acción no se puede deshacer.');">
+                      data-confirm="¿Cerrar la recepción y actualizar el stock? Esta acción no se puede deshacer: después no podrás modificar el conteo ni las mermas."
+                      data-confirm-titulo="Confirmar cierre de recepción"
+                      data-confirm-boton="Cerrar recepción"
+                      data-confirm-datos="{{ json_encode($datosCierre) }}">
                     @csrf
                     @method('PATCH')
 

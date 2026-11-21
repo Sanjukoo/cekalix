@@ -56,7 +56,14 @@
                                         <a href="{{ route('proveedores.edit', $proveedor) }}" class="btn btn-sm btn-negro" title="Editar">Editar</a>
                                         <form action="{{ route('proveedores.destroy', $proveedor) }}"
                                               method="POST"
-                                              data-confirm="¿Estás seguro de que deseas eliminar este socio?">
+                                              data-confirm="¿Estás seguro de que deseas eliminar este proveedor? Esta acción no se puede deshacer."
+                                              data-confirm-titulo="Confirmar eliminación"
+                                              data-confirm-boton="Eliminar proveedor"
+                                              data-confirm-datos="{{ json_encode([
+                                                  'Proveedor' => $proveedor->razon_social,
+                                                  'País de origen' => $proveedor->pais_origen ?? '—',
+                                                  'Estado' => $proveedor->activo ? 'Activo' : 'Inactivo',
+                                              ]) }}">
                                            @csrf
                                            @method('DELETE')
                                            <button type="submit" class="btn btn-sm btn-outline-rojo" title="Eliminar"> Eliminar </button>

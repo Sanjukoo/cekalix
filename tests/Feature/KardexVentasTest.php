@@ -50,7 +50,7 @@ class KardexVentasTest extends TestCase
     {
         $producto = $this->producto('KAR-1', 10);
 
-        $venta = $this->venta([['producto_id' => $producto->id, 'cantidad' => 4]]);
+        $venta = $this->venta([['producto_id' => $producto->id, 'modalidad' => 'unidad', 'cantidad' => 4]]);
 
         $movimiento = MovimientoInventario::where('tipo', 'venta')->firstOrFail();
         $this->assertSame(-4, $movimiento->cantidad);
@@ -63,7 +63,7 @@ class KardexVentasTest extends TestCase
     public function test_anular_devuelve_el_stock_y_no_borra_la_venta(): void
     {
         $producto = $this->producto('KAR-2', 10);
-        $venta = $this->venta([['producto_id' => $producto->id, 'cantidad' => 3]]);
+        $venta = $this->venta([['producto_id' => $producto->id, 'modalidad' => 'unidad', 'cantidad' => 3]]);
 
         $this->actingAs(User::factory()->create(['role' => 'ventas']))
             ->patch("/ventas/{$venta->id}/anular", ['motivo_anulacion' => 'Cliente desistió'])
@@ -81,7 +81,7 @@ class KardexVentasTest extends TestCase
     public function test_una_venta_no_se_anula_dos_veces(): void
     {
         $producto = $this->producto('KAR-3', 10);
-        $venta = $this->venta([['producto_id' => $producto->id, 'cantidad' => 1]]);
+        $venta = $this->venta([['producto_id' => $producto->id, 'modalidad' => 'unidad', 'cantidad' => 1]]);
         $usuario = User::factory()->create(['role' => 'ventas']);
 
         $this->actingAs($usuario)->patch("/ventas/{$venta->id}/anular", ['motivo_anulacion' => 'Error'])
@@ -96,15 +96,15 @@ class KardexVentasTest extends TestCase
     {
         $bisagra = $this->producto('KAR-4', 10, 4.00);
         $corredera = $this->producto('KAR-5', 10, 12.00);
-        $venta = $this->venta([['producto_id' => $bisagra->id, 'cantidad' => 2]]);
+        $venta = $this->venta([['producto_id' => $bisagra->id, 'modalidad' => 'unidad', 'cantidad' => 2]]);
 
         $this->actingAs(User::factory()->create(['role' => 'ventas']))
             ->put("/ventas/{$venta->id}", [
                 'cliente_id' => null,
                 'fecha_venta' => '2026-10-26',
                 'productos' => [
-                    ['producto_id' => $bisagra->id, 'cantidad' => 5],
-                    ['producto_id' => $corredera->id, 'cantidad' => 1],
+                    ['producto_id' => $bisagra->id, 'modalidad' => 'unidad', 'cantidad' => 5],
+                    ['producto_id' => $corredera->id, 'modalidad' => 'unidad', 'cantidad' => 1],
                 ],
             ])
             ->assertSessionHasNoErrors();
@@ -112,7 +112,9 @@ class KardexVentasTest extends TestCase
         $this->assertSame(5, $bisagra->fresh()->stock);
         $this->assertSame(9, $corredera->fresh()->stock);
         $this->assertSame(2, VentaDetalle::where('venta_id', $venta->id)->count());
-        $this->assertSame('32.00', number_format((float) $venta->fresh()->total, 2, '.', ''));
+        // Subtotal 32.00 + IGV 18 % (5.76) = 37.76
+        $this->assertSame('32.00', number_format((float) $venta->fresh()->subtotal, 2, '.', ''));
+        $this->assertSame('37.76', number_format((float) $venta->fresh()->total, 2, '.', ''));
         // Una devolución por la línea anterior, y las salidas: la venta original más las dos líneas nuevas.
         $this->assertSame(1, MovimientoInventario::where('tipo', 'edicion_venta')->count());
         $this->assertSame(3, MovimientoInventario::where('tipo', 'venta')->count());
@@ -121,7 +123,7 @@ class KardexVentasTest extends TestCase
     public function test_una_venta_anulada_no_se_puede_editar(): void
     {
         $producto = $this->producto('KAR-6', 10);
-        $venta = $this->venta([['producto_id' => $producto->id, 'cantidad' => 2]]);
+        $venta = $this->venta([['producto_id' => $producto->id, 'modalidad' => 'unidad', 'cantidad' => 2]]);
         $usuario = User::factory()->create(['role' => 'ventas']);
 
         $this->actingAs($usuario)->patch("/ventas/{$venta->id}/anular", ['motivo_anulacion' => 'Error'])
@@ -132,7 +134,7 @@ class KardexVentasTest extends TestCase
 
         $this->actingAs($usuario)->put("/ventas/{$venta->id}", [
             'fecha_venta' => '2026-10-26',
-            'productos' => [['producto_id' => $producto->id, 'cantidad' => 1]],
+            'productos' => [['producto_id' => $producto->id, 'modalidad' => 'unidad', 'cantidad' => 1]],
         ])->assertSessionHasErrors('productos');
 
         $this->assertSame(10, $producto->fresh()->stock);
@@ -198,7 +200,7 @@ class KardexVentasTest extends TestCase
     public function test_el_comprobante_se_descarga_en_pdf(): void
     {
         $producto = $this->producto('KAR-10', 10);
-        $venta = $this->venta([['producto_id' => $producto->id, 'cantidad' => 2]]);
+        $venta = $this->venta([['producto_id' => $producto->id, 'modalidad' => 'unidad', 'cantidad' => 2]]);
 
         $respuesta = $this->actingAs(User::factory()->create(['role' => 'ventas']))
             ->get("/ventas/{$venta->id}/comprobante");
@@ -213,7 +215,7 @@ class KardexVentasTest extends TestCase
         $producto = $this->producto('KAR-11', 10);
         $cliente = Cliente::create(['nombre' => 'Cliente de prueba', 'tipo_documento' => 'DNI', 'numero_documento' => '70000001']);
 
-        $venta = $this->venta([['producto_id' => $producto->id, 'cantidad' => 1]], $cliente->id);
+        $venta = $this->venta([['producto_id' => $producto->id, 'modalidad' => 'unidad', 'cantidad' => 1]], $cliente->id);
 
         $this->assertSame($cliente->id, $venta->cliente_id);
         $this->assertSame('Cliente de prueba', $venta->nombreCliente());
@@ -223,7 +225,7 @@ class KardexVentasTest extends TestCase
     {
         $producto = $this->producto('KAR-12', 10);
         $cliente = Cliente::create(['nombre' => 'Cliente con historial']);
-        $this->venta([['producto_id' => $producto->id, 'cantidad' => 1]], $cliente->id);
+        $this->venta([['producto_id' => $producto->id, 'modalidad' => 'unidad', 'cantidad' => 1]], $cliente->id);
 
         $this->actingAs(User::factory()->create(['role' => 'admin']))
             ->delete("/clientes/{$cliente->id}")
@@ -255,7 +257,7 @@ class KardexVentasTest extends TestCase
     public function test_el_kardex_se_ve_en_la_ficha_solo_para_admin_e_inventario(): void
     {
         $producto = $this->producto('KAR-13', 10);
-        $this->venta([['producto_id' => $producto->id, 'cantidad' => 2]]);
+        $this->venta([['producto_id' => $producto->id, 'modalidad' => 'unidad', 'cantidad' => 2]]);
 
         $this->actingAs(User::factory()->create(['role' => 'inventario']))
             ->get("/productos/{$producto->id}")

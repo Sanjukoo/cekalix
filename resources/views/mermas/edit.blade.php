@@ -21,7 +21,9 @@
             <form action="{{ route('mermas.update', $merma) }}"
                   method="POST"
                   enctype="multipart/form-data"
-                  data-confirm="¿Estás seguro de que deseas actualizar esta merma?">
+                  data-confirm="Se guardarán los cambios de la merma #{{ $merma->id }}."
+                  data-confirm-titulo="Confirmar edición de merma"
+                  data-confirm-boton="Guardar cambios">
                 @csrf
                 @method('PUT')
 
@@ -144,12 +146,16 @@
                          <div class="mb-2">
                              <p class="mb-1">Fotografía actual:</p>
 
-                             <img
-                                 src="{{ asset('storage/' . $merma->imagen) }}"
-                                 alt="Fotografía de la merma"
-                                 class="img-thumbnail"
-                                 style="max-width: 250px;"
-                             >
+                             <a href="{{ route('mermas.imagen', $merma) }}?v={{ $merma->updated_at?->timestamp }}"
+                                target="_blank"
+                                rel="noopener noreferrer">
+                                 <img
+                                     src="{{ route('mermas.imagen', $merma) }}?v={{ $merma->updated_at?->timestamp }}"
+                                     alt="Fotografía de la merma"
+                                     class="img-thumbnail"
+                                     style="max-width: 250px;"
+                                 >
+                             </a>
                          </div>
                      @endif
 

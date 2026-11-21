@@ -104,7 +104,14 @@
                         Ver historial de movimientos
                     </a>
 
-                    <form action="{{ route('productos.ajustar', $producto) }}" method="POST">
+                    <form action="{{ route('productos.ajustar', $producto) }}" method="POST"
+                          data-confirm="El ajuste cambiará el stock del producto y quedará registrado en el kárdex con su motivo."
+                          data-confirm-titulo="Confirmar ajuste de stock"
+                          data-confirm-boton="Registrar ajuste"
+                          data-confirm-datos="{{ json_encode([
+                              'Producto' => $producto->codigo.' - '.$producto->nombre,
+                              'Stock actual' => $producto->stock.' unidades',
+                          ]) }}">
                         @csrf
 
                         <label for="cantidad" class="form-label">Ajuste (unidades)</label>
@@ -148,10 +155,18 @@
             <div class="card card-custom mt-3">
                 <div class="card-header">Acciones</div>
                 <div class="card-body">
-                    <form action="{{ route('productos.destroy', $producto) }}" method="POST">
+                    <form action="{{ route('productos.destroy', $producto) }}" method="POST"
+                          data-confirm="¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer."
+                          data-confirm-titulo="Confirmar eliminación"
+                          data-confirm-boton="Eliminar producto"
+                          data-confirm-datos="{{ json_encode([
+                              'Código' => $producto->codigo,
+                              'Producto' => $producto->nombre,
+                              'Stock actual' => $producto->stock.' unidades',
+                          ]) }}">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn btn-outline-rojo w-100" onclick="return confirm('¿Está seguro de que desea eliminar este producto?')">
+                        <button type="submit" class="btn btn-outline-rojo w-100">
                             Eliminar Producto
                         </button>
                     </form>

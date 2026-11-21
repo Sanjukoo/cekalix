@@ -66,7 +66,14 @@
 
                                         <form action="{{ route('clientes.destroy', $cliente) }}"
                                               method="POST"
-                                              data-confirm="¿Estás seguro de que deseas eliminar este cliente?">
+                                              data-confirm="¿Estás seguro de que deseas eliminar este cliente? Esta acción no se puede deshacer."
+                                              data-confirm-titulo="Confirmar eliminación"
+                                              data-confirm-boton="Eliminar cliente"
+                                              data-confirm-datos="{{ json_encode([
+                                                  'Cliente' => $cliente->nombre,
+                                                  'Documento' => trim($cliente->tipo_documento.' '.$cliente->numero_documento) ?: '—',
+                                                  'Ventas registradas' => $cliente->ventas_count,
+                                              ]) }}">
                                            @csrf
                                            @method('DELETE')
                                            <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>

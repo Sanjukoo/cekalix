@@ -53,6 +53,7 @@
                             <th>Cajas estables</th>
                             <th>Motivo</th>
                             <th>Descripción</th>
+                            <th>Evidencia</th>
                             <th>Fecha</th>
 
                             @if (auth()->user()->role === 'admin')
@@ -122,6 +123,25 @@
                                 </td>
 
                                 <td>
+                                    @if ($merma->imagen)
+                                        <a href="{{ route('mermas.imagen', $merma) }}?v={{ $merma->updated_at?->timestamp }}"
+                                           target="_blank"
+                                           rel="noopener noreferrer"
+                                           title="Ver fotografía completa">
+                                            <img
+                                                src="{{ route('mermas.imagen', $merma) }}?v={{ $merma->updated_at?->timestamp }}"
+                                                alt="Evidencia de la merma"
+                                                class="img-thumbnail"
+                                                style="width: 64px; height: 64px; object-fit: cover;"
+                                                loading="lazy"
+                                            >
+                                        </a>
+                                    @else
+                                        <span class="text-muted small">Sin foto</span>
+                                    @endif
+                                </td>
+
+                                <td>
                                     {{ $merma->fecha_registro->format('d/m/Y') }}
                                 </td>
 
@@ -141,7 +161,16 @@
                                             <form
                                                 action="{{ route('mermas.destroy', $merma) }}"
                                                 method="POST"
-                                                data-confirm="¿Estás seguro de que deseas eliminar esta merma?"
+                                                data-confirm="¿Estás seguro de que deseas eliminar esta merma? Esta acción no se puede deshacer."
+                                                data-confirm-titulo="Confirmar eliminación"
+                                                data-confirm-boton="Eliminar merma"
+                                                data-confirm-datos="{{ json_encode([
+                                                    'Importación' => '#'.($detalle->importacion->id ?? 'N/A'),
+                                                    'SKU' => $detalle->producto_codigo ?? $detalle->producto?->codigo ?? 'N/A',
+                                                    'Cajas dañadas' => $merma->cantidad,
+                                                    'Motivo' => $merma->motivo === 'OTRO' ? ($merma->descripcion ?? 'Otro') : $merma->motivo,
+                                                    'Fecha' => $merma->fecha_registro->format('d/m/Y'),
+                                                ]) }}"
                                             >
                                                 @csrf
                                                 @method('DELETE')
@@ -161,7 +190,7 @@
                         @empty
                             <tr>
                                 <td
-                                    colspan="{{ auth()->user()->role === 'admin' ? 12 : 11 }}"
+                                    colspan="{{ auth()->user()->role === 'admin' ? 13 : 12 }}"
                                     class="text-center"
                                 >
                                     Todavía no hay mermas registradas.

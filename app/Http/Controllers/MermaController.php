@@ -7,7 +7,6 @@ use App\Models\Importacion;
 use App\Models\ImportacionDetalle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class MermaController extends Controller
 {
@@ -66,7 +65,7 @@ class MermaController extends Controller
             }
 
             if ($imagen) {
-                $validated['imagen'] = $imagen->store('mermas', 'public');
+                $validated['imagen'] = $imagen->store('mermas', 'local');
             }
 
             Merma::create($validated);
@@ -88,6 +87,12 @@ class MermaController extends Controller
             ->route('mermas.index')
             ->with('success', 'Merma registrada correctamente.')
             ->with('cajasEstables', $resultado['cajasEstables']);
+    }
+
+    // Mostrar la fotografía de evidencia de una merma.
+    public function imagen(Merma $merma)
+    {
+        return $this->responderArchivo($merma->imagen);
     }
 
     // Mostrar el formulario de edición.
@@ -162,7 +167,7 @@ class MermaController extends Controller
             // Si se seleccionó una nueva fotografía, reemplaza la anterior.
             if ($imagen) {
                 $imagenAnterior = $mermaActual->imagen;
-                $validated['imagen'] = $imagen->store('mermas', 'public');
+                $validated['imagen'] = $imagen->store('mermas', 'local');
             }
 
             $mermaActual->update($validated);
@@ -181,9 +186,7 @@ class MermaController extends Controller
         }
 
         // Eliminar la fotografía anterior después de actualizar correctamente.
-        if ($imagenAnterior) {
-            Storage::disk('public')->delete($imagenAnterior);
-        }
+        $this->eliminarArchivo($imagenAnterior);
 
         return redirect()
             ->route('mermas.index')
@@ -230,9 +233,7 @@ class MermaController extends Controller
         }
 
         // Eliminar la fotografía asociada al registro eliminado.
-        if ($imagenAnterior) {
-            Storage::disk('public')->delete($imagenAnterior);
-        }
+        $this->eliminarArchivo($imagenAnterior);
 
         return redirect()
             ->route('mermas.index')

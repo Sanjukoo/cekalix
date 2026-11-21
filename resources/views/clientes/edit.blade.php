@@ -11,7 +11,10 @@
 
 <div class="card card-custom">
     <div class="card-body">
-        <form action="{{ route('clientes.update', $cliente) }}" method="POST">
+        <form action="{{ route('clientes.update', $cliente) }}" method="POST"
+              data-confirm="Se guardarán los cambios del cliente."
+              data-confirm-titulo="Confirmar edición de cliente"
+              data-confirm-boton="Guardar cambios">
             @csrf
             @method('PUT')
 

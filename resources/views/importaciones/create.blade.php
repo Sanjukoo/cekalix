@@ -16,7 +16,9 @@
         <form action="{{ route('importaciones.store') }}"
               method="POST"
               enctype="multipart/form-data"
-              data-confirm="¿Estás seguro de que deseas registrar esta importación y su factura?">
+              data-confirm="Revisa los datos de la importación antes de registrarla. Quedará en estado «En recepción»."
+              data-confirm-titulo="Confirmar registro de importación"
+              data-confirm-boton="Registrar importación">
 
             @csrf
 
@@ -148,9 +150,9 @@
                 ]);
             @endphp
 
-            <div id="detalles-container">
+            <div id="detalles-container" data-resumen-grupo="Mercadería">
                 @foreach($detallesIniciales as $i => $detalle)
-                    <div class="row mb-3 detalle-row align-items-end">
+                    <div class="row mb-3 detalle-row align-items-end" data-resumen-fila>
                         <div class="col-md-6">
                             <label class="form-label">
                                 SKU / Código <span class="text-danger">*</span>
@@ -244,6 +246,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const fila = document.createElement('div');
 
         fila.className = 'row mb-3 detalle-row align-items-end';
+        fila.setAttribute('data-resumen-fila', '');
 
         fila.innerHTML = `
             <div class="col-md-6">

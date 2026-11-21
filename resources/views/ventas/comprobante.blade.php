@@ -148,8 +148,8 @@
                 <th class="centro">#</th>
                 <th>Código</th>
                 <th>Producto</th>
-                <th class="centro">Cajas</th>
-                <th class="centro">Unid./caja</th>
+                <th class="centro">Vendido por</th>
+                <th class="centro">Cantidad</th>
                 <th class="centro">Total unid.</th>
                 <th class="derecha">P. unitario</th>
                 <th class="derecha">Subtotal</th>
@@ -165,9 +165,9 @@
 
                     <td>{{ $detalle->producto?->nombre ?? 'Producto no disponible' }}</td>
 
-                    <td class="centro">{{ $detalle->cajas ?? '—' }}</td>
+                    <td class="centro">{{ $detalle->descripcionModalidad() }}</td>
 
-                    <td class="centro">{{ $detalle->unidades_por_caja ?? '—' }}</td>
+                    <td class="centro">{{ $detalle->descripcionCantidad() }}</td>
 
                     <td class="centro">{{ $detalle->cantidad }}</td>
 

@@ -13,8 +13,10 @@
     <div class="card-header">Datos del Producto</div>
 
     <div class="card-body">
-        <form action="{{ route('productos.store') }}"method="POST" novalidate
-        data-confirm="¿Estás seguro de que deseas registrar o actualizar este producto?">
+        <form action="{{ route('productos.store') }}" method="POST" novalidate
+              data-confirm="Revisa los datos del producto. Si el SKU ya existe, se actualizará su ficha."
+              data-confirm-titulo="Confirmar registro de producto"
+              data-confirm-boton="Guardar producto">
             @csrf
 
             {{-- Selección de importación y SKU --}}
@@ -250,33 +252,23 @@
     </div>
 </div>
 
+@php
+    // Atributos actuales de los productos vinculados a cada detalle.
+    $atributosExistentes = $detallesPendientes->mapWithKeys(fn ($detalle) => [
+        $detalle->id => (object) ($detalle->producto
+            ? $detalle->producto->atributos->pluck('valor', 'clave')->all()
+            : []),
+    ])->all();
+@endphp
+<script src="{{ asset('js/atributos-producto.js') }}?v={{ filemtime(public_path('js/atributos-producto.js')) }}"></script>
 <script>
-const atributosPorCategoria = @json(
-    $categorias->mapWithKeys(function ($categoria) {
-        return [
-            $categoria->slug => $categoria->atributos->map(function ($atributo) {
-                return [
-                    'nombre' => $atributo->nombre,
-                    'campo' => \Illuminate\Support\Str::slug($atributo->nombre)
-                ];
-            })
-        ];
-    })
-);
+// Atributos de cada categoría con su lista de opciones (si la tiene).
+const atributosPorCategoria = {{ \Illuminate\Support\Js::from($atributosPorCategoria) }};
 
-// Atributos actuales de los productos vinculados a cada detalle.
-const atributosExistentes = @json(
-    $detallesPendientes->mapWithKeys(function ($detalle) {
-        return [
-            $detalle->id => $detalle->producto
-                ? $detalle->producto->atributos->pluck('valor', 'clave')
-                : [],
-        ];
-    })
-);
+const atributosExistentes = {{ \Illuminate\Support\Js::from((object) $atributosExistentes) }};
 
 // Datos anteriores enviados por el formulario, si hubo errores de validación.
-const valoresAnteriores = @json(old());
+const valoresAnteriores = {{ \Illuminate\Support\Js::from((object) old()) }};
 
 const selectorImportacion =
     document.getElementById('importacion_detalle_id');
@@ -289,16 +281,6 @@ const campoCategoria = document.getElementById('categoria_id');
 const campoUnidades = document.getElementById('unidades_por_caja');
 const campoDescripcion = document.getElementById('descripcion');
 const campoPrecio = document.getElementById('precio_venta');
-
-function escaparHtml(valor) {
-    return String(valor ?? '').replace(/[&<>"']/g, caracter => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-    })[caracter]);
-}
 
 function actualizarDatosImportacion() {
     const opcion =
@@ -338,27 +320,13 @@ function actualizarAtributos() {
 
     const container = document.getElementById('atributos-container');
 
-    if (!opcionCategoria || opcionCategoria.value === 'nueva') {
-        if (opcionCategoria && opcionCategoria.value === 'nueva') {
-            window.location.href = "{{ route('categorias.create') }}";
-        }
-
-        container.innerHTML = '';
+    if (opcionCategoria && opcionCategoria.value === 'nueva') {
+        window.location.href = "{{ route('categorias.create') }}";
         return;
     }
 
-    container.innerHTML = '';
-
-    if (!opcionCategoria.value) {
-        return;
-    }
-
-    const slug = opcionCategoria.dataset.slug;
-    const atributos = slug ? atributosPorCategoria[slug] : null;
-
-    if (!atributos || atributos.length === 0) {
-        container.innerHTML =
-            '<p class="text-muted">Esta categoría no tiene atributos definidos.</p>';
+    if (!opcionCategoria || !opcionCategoria.value) {
+        container.replaceChildren();
         return;
     }
 
@@ -369,45 +337,20 @@ function actualizarAtributos() {
         ? (atributosExistentes[opcionImportacion.value] || {})
         : {};
 
-    let html = `
-        <h6 class="text-danger">
-            Atributos de ${escaparHtml(opcionCategoria.text)}
-        </h6>
-        <div class="row">
-    `;
-
-    atributos.forEach(atributo => {
-        const nombreCampo = 'atributo_' + atributo.campo;
-
-        // Priorizar los valores enviados si el formulario tuvo errores.
-        const valor = Object.prototype.hasOwnProperty.call(
-            valoresAnteriores,
-            nombreCampo
-        )
-            ? valoresAnteriores[nombreCampo]
-            : (valoresProducto[atributo.campo] ?? '');
-
-        html += `
-            <div class="col-md-6 mb-3">
-                <label
-                    for="${escaparHtml(nombreCampo)}"
-                    class="form-label"
-                >
-                    ${escaparHtml(atributo.nombre)}
-                </label>
-
-                <input
-                    type="text"
-                    id="${escaparHtml(nombreCampo)}"
-                    name="${escaparHtml(nombreCampo)}"
-                    class="form-control"
-                    value="${escaparHtml(valor)}"
-                >
-            </div>
-        `;
+    // Priorizar los valores enviados si el formulario tuvo errores.
+    const valores = Object.assign({}, valoresProducto);
+    Object.keys(valoresAnteriores).forEach(function (clave) {
+        if (clave.indexOf('atributo_') === 0) {
+            valores[clave.slice('atributo_'.length)] = valoresAnteriores[clave];
+        }
     });
 
-    container.innerHTML = html + '</div>';
+    CekalixAtributos.dibujar(
+        container,
+        opcionCategoria.text.trim(),
+        atributosPorCategoria[opcionCategoria.dataset.slug],
+        valores
+    );
 }
 
 selectorImportacion.addEventListener(

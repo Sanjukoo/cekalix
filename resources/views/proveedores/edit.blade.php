@@ -12,7 +12,10 @@
 <div class="card card-custom" style="max-width: 800px;">
     <div class="card-header">Actualizar Datos</div>
     <div class="card-body">
-        <form action="{{ route('proveedores.update', $proveedor) }}" method="POST" novalidate>
+        <form action="{{ route('proveedores.update', $proveedor) }}" method="POST" novalidate
+              data-confirm="Se guardarán los cambios del proveedor."
+              data-confirm-titulo="Confirmar edición de proveedor"
+              data-confirm-boton="Guardar cambios">
             @csrf
             @method('PUT')
 

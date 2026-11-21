@@ -12,7 +12,10 @@
 <div class="card card-custom" style="max-width: 800px;">
     <div class="card-header">Datos del Proveedor</div>
     <div class="card-body">
-        <form action="{{ route('proveedores.store') }}" method="POST" novalidate>
+        <form action="{{ route('proveedores.store') }}" method="POST" novalidate
+              data-confirm="Revisa los datos del proveedor antes de registrarlo."
+              data-confirm-titulo="Confirmar registro de proveedor"
+              data-confirm-boton="Guardar proveedor">
             @csrf
 
             @include('proveedores._campos')

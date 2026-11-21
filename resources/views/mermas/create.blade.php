@@ -20,7 +20,9 @@
             <form action="{{ route('mermas.store') }}"
                   method="POST"
                   enctype="multipart/form-data"
-                  data-confirm="¿Estás seguro de que deseas registrar esta merma?">
+                  data-confirm="Revisa los datos de la merma antes de registrarla."
+                  data-confirm-titulo="Confirmar registro de merma"
+                  data-confirm-boton="Registrar merma">
                 @csrf
 
                 <div class="mb-3">
@@ -193,7 +195,7 @@
 
                     <p class="mb-0">
                         Cajas estables estimadas:
-                        <strong id="cajas_estables">0</strong>
+                        <strong id="cajas_estables" data-resumen-valor="Cajas estables estimadas">0</strong>
                     </p>
                 </div>
 

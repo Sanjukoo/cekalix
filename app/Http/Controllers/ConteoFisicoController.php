@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ConteoFisico;
 use App\Models\Importacion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class ConteoFisicoController extends Controller
@@ -113,7 +113,7 @@ class ConteoFisicoController extends Controller
                     }
 
                     $datos['imagen'] = $imagenes[$detalle->id]
-                        ->store('conteos_fisicos', 'public');
+                        ->store('conteos_fisicos', 'local');
                 }
 
                 // Si no se adjunta una nueva imagen, conserva la anterior.
@@ -125,11 +125,17 @@ class ConteoFisicoController extends Controller
 
         // Eliminar las fotografías anteriores después de guardar correctamente.
         foreach ($imagenesAnteriores as $ruta) {
-            Storage::disk('public')->delete($ruta);
+            $this->eliminarArchivo($ruta);
         }
 
         return redirect()
             ->route('importaciones.show', $importacion)
             ->with('success', 'Conteo físico guardado correctamente.');
+    }
+
+    // Mostrar la fotografía de evidencia del conteo físico de un SKU.
+    public function imagen(ConteoFisico $conteo)
+    {
+        return $this->responderArchivo($conteo->imagen);
     }
 }

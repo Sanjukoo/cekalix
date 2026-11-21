@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\Categoria;
 use App\Models\ConteoFisico;
 use App\Models\Importacion;
-use App\Models\ImportacionDetalle;
 use App\Models\Producto;
 use App\Models\Proveedor;
 use App\Models\User;
@@ -59,8 +58,9 @@ class ConteoFisicoTest extends TestCase
 
         $this->actingAs($usuario)->get('/importaciones')->assertOk()
             ->assertSee('Ver conteo')->assertDontSee('Nueva Importación');
+        $sku = 'SKU-'.$importacion->proveedor_id;
         $this->get('/importaciones/'.$importacion->id)->assertOk()
-            ->assertSee('SKU-1-1')->assertSee('SKU-1-2')->assertSee('SKU-1-3')
+            ->assertSee($sku.'-1')->assertSee($sku.'-2')->assertSee($sku.'-3')
             ->assertSee('Cajas Facturadas')->assertSee('Cajas Contadas')->assertSee('Diferencia')
             ->assertSee('Sin contar')->assertSee('Guardar conteo físico');
         $this->get('/importaciones/create')->assertForbidden();
