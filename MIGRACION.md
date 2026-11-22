@@ -118,7 +118,6 @@ importaciones
 ├── id
 ├── proveedor_id → proveedores.id
 ├── numero_factura
-├── numero_contenedor
 ├── fecha_llegada
 ├── estado
 └── timestamps

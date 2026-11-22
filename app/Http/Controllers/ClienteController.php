@@ -34,11 +34,12 @@ class ClienteController extends Controller
     {
         $validated = $this->validar($request);
 
-        Cliente::create($validated);
+        $cliente = Cliente::create($validated);
 
         return redirect()
             ->route('clientes.index')
-            ->with('success', 'Cliente registrado correctamente.');
+            ->with('success', "Cliente «{$cliente->nombre}» registrado correctamente.")
+            ->with('detalle', $this->detalle($cliente));
     }
 
     public function edit(Cliente $cliente)
@@ -52,7 +53,16 @@ class ClienteController extends Controller
 
         return redirect()
             ->route('clientes.index')
-            ->with('success', 'Cliente actualizado correctamente.');
+            ->with('success', "Cliente «{$cliente->nombre}» actualizado correctamente.")
+            ->with('detalle', $this->detalle($cliente) + [
+                'Campos modificados' => $this->camposModificados(array_keys($cliente->getChanges()), [
+                    'nombre' => 'Nombre',
+                    'tipo_documento' => 'Tipo de documento',
+                    'numero_documento' => 'N.º de documento',
+                    'telefono' => 'Teléfono',
+                    'direccion' => 'Dirección',
+                ]),
+            ]);
     }
 
     public function destroy(Cliente $cliente)
@@ -63,11 +73,25 @@ class ClienteController extends Controller
                 ->with('error', 'No se puede eliminar un cliente que tiene ventas registradas.');
         }
 
+        $detalle = $this->detalle($cliente);
+
         $cliente->delete();
 
         return redirect()
             ->route('clientes.index')
-            ->with('success', 'Cliente eliminado correctamente.');
+            ->with('success', "Cliente «{$cliente->nombre}» eliminado correctamente.")
+            ->with('detalle', $detalle);
+    }
+
+    // Datos del cliente que se muestran como comprobación.
+    private function detalle(Cliente $cliente): array
+    {
+        return [
+            'Nombre' => $cliente->nombre,
+            'Documento' => trim(($cliente->tipo_documento ?? '').' '.($cliente->numero_documento ?? '')),
+            'Teléfono' => $cliente->telefono,
+            'Dirección' => $cliente->direccion,
+        ];
     }
 
     private function validar(Request $request, ?Cliente $cliente = null): array

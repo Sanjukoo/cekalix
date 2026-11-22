@@ -12,7 +12,6 @@ class Importacion extends Model
         'proveedor_id',
         'numero_factura',
         'archivo_factura',
-        'numero_contenedor',
         'fecha_llegada',
         'estado',
     ];

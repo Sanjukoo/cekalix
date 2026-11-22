@@ -39,10 +39,6 @@
                         <label class="form-label"><strong>Nº de Factura</strong></label>
                         <p class="form-control-plaintext">{{ $importacion->numero_factura }}</p>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label"><strong>Nº de Contenedor</strong></label>
-                        <p class="form-control-plaintext">{{ $importacion->numero_contenedor }}</p>
-                    </div>
                 </div>
 
                 <div class="row">

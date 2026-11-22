@@ -48,7 +48,6 @@
                                     {{ old('importacion_detalle_id', $merma->importacion_detalle_id) == $detalle->id ? 'selected' : '' }}
                                 >
                                     Importación #{{ $importacion->id }}
-                                    - Contenedor {{ $importacion->numero_contenedor }}
                                     - {{ $detalle->producto_codigo ?? $detalle->producto?->codigo ?? 'Sin código' }}
                                     - {{ $detalle->producto?->nombre ?? 'Pendiente de registro' }}
                                     - {{ $detalle->conteoFisico->cajas_contadas }} cajas recibidas

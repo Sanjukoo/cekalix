@@ -77,21 +77,6 @@
                         <div class="invalid-feedback d-block">{{ $message }}</div>
                     @enderror
                 </div>
-
-                <div class="col-md-6">
-                    <label for="numero_contenedor" class="form-label">
-                        Nº de Contenedor <span class="text-danger">*</span>
-                    </label>
-
-                    <input type="text" id="numero_contenedor" name="numero_contenedor"
-                           class="form-control @error('numero_contenedor') is-invalid @enderror"
-                           placeholder="Ej: CONT-001"
-                           value="{{ old('numero_contenedor') }}" required>
-
-                    @error('numero_contenedor')
-                        <div class="invalid-feedback d-block">{{ $message }}</div>
-                    @enderror
-                </div>
             </div>
 
             <hr>

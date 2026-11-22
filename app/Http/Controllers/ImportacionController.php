@@ -49,7 +49,6 @@ class ImportacionController extends Controller
         $validated = $request->validate([
             'proveedor_id' => 'required|exists:proveedores,id',
             'numero_factura' => 'required|string|max:50',
-            'numero_contenedor' => 'required|string|max:50',
             'fecha_llegada' => 'required|date',
 
             // Documento adjunto de la factura
@@ -67,7 +66,6 @@ class ImportacionController extends Controller
             'proveedor_id.required' => 'Debe seleccionar un proveedor.',
             'proveedor_id.exists' => 'El proveedor seleccionado no existe.',
             'numero_factura.required' => 'El número de factura es obligatorio.',
-            'numero_contenedor.required' => 'El número de contenedor es obligatorio.',
             'fecha_llegada.required' => 'La fecha de llegada es obligatoria.',
             'fecha_llegada.date' => 'La fecha debe ser válida.',
             'detalles.required' => 'Debe agregar al menos un producto.',
@@ -108,7 +106,6 @@ class ImportacionController extends Controller
                     'proveedor_id' => $validated['proveedor_id'],
                     'numero_factura' => $validated['numero_factura'],
                     'archivo_factura' => $rutaFactura,
-                    'numero_contenedor' => $validated['numero_contenedor'],
                     'fecha_llegada' => $validated['fecha_llegada'],
                     'estado' => 'En recepción',
                 ]);
@@ -131,11 +128,22 @@ class ImportacionController extends Controller
                 return $importacion;
             });
 
+            $importacion->load('proveedor');
+            $detalles = collect($validated['detalles']);
+
             return redirect()->route('importaciones.index')
                 ->with(
                     'success',
                     "Importación #{$importacion->id} registrada correctamente (Estado: En recepción)."
-                );
+                )
+                ->with('detalle', [
+                    'Proveedor' => $importacion->proveedor?->razon_social,
+                    'N.º de factura' => $importacion->numero_factura,
+                    'Fecha de llegada' => $this->fechaCorta($importacion->fecha_llegada),
+                    'Factura adjunta' => $rutaFactura ? 'Sí' : 'No',
+                    'SKU registrados' => $detalles->count(),
+                    'Cajas facturadas' => $detalles->sum('cajas_facturadas'),
+                ]);
 
         } catch (\Exception $e) {
             report($e);
@@ -185,7 +193,7 @@ class ImportacionController extends Controller
     // Cierra la recepción: lo que llegó en buen estado pasa al stock.
     public function cerrar(Importacion $importacion)
     {
-        DB::transaction(function () use ($importacion) {
+        $resumen = DB::transaction(function () use ($importacion) {
             $importacion = Importacion::whereKey($importacion->id)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -216,6 +224,8 @@ class ImportacionController extends Controller
                 }
             }
 
+            $resumen = ['cajas' => 0, 'danadas' => 0, 'unidades' => 0];
+
             foreach ($detalles as $detalle) {
                 // Cajas en buen estado = contadas - dañadas; el stock se lleva en unidades.
                 $cajasBuenas = $detalle->conteoFisico->cajas_contadas
@@ -225,19 +235,36 @@ class ImportacionController extends Controller
                     ->lockForUpdate()
                     ->firstOrFail();
 
+                $unidades = max(0, $cajasBuenas) * $producto->unidades_por_caja;
+
                 MovimientoInventario::registrar(
                     $producto,
-                    max(0, $cajasBuenas) * $producto->unidades_por_caja,
+                    $unidades,
                     'cierre_importacion',
                     "Recepción de importación #{$importacion->id}",
                     $importacion
                 );
+
+                $resumen['cajas'] += max(0, $cajasBuenas);
+                $resumen['danadas'] += (int) $detalle->mermas_sum_cantidad;
+                $resumen['unidades'] += $unidades;
             }
 
             $importacion->update(['estado' => 'Procesada']);
+
+            $resumen['skus'] = $detalles->count();
+
+            return $resumen;
         });
 
         return redirect()->route('importaciones.show', $importacion)
-            ->with('success', 'Recepción cerrada. El stock de los productos fue actualizado.');
+            ->with('success', "Recepción de la importación #{$importacion->id} cerrada. El stock de los productos fue actualizado.")
+            ->with('detalle', [
+                'Estado' => 'Procesada',
+                'SKU procesados' => $resumen['skus'],
+                'Cajas en buen estado' => $resumen['cajas'],
+                'Cajas dañadas (mermas)' => $resumen['danadas'],
+                'Unidades ingresadas al stock' => $resumen['unidades'],
+            ]);
     }
 }

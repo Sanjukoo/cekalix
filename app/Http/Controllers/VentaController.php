@@ -64,7 +64,8 @@ class VentaController extends Controller
 
         return redirect()
             ->route('ventas.show', $venta)
-            ->with('success', 'Venta registrada correctamente.');
+            ->with('success', "Venta {$venta->numero} registrada correctamente. El stock fue descontado.")
+            ->with('detalle', $this->detalle($venta));
     }
 
     public function show(Venta $venta)
@@ -140,7 +141,8 @@ class VentaController extends Controller
 
         return redirect()
             ->route('ventas.show', $venta)
-            ->with('success', 'Venta actualizada correctamente.');
+            ->with('success', "Venta {$venta->numero} actualizada correctamente. El stock fue recalculado.")
+            ->with('detalle', $this->detalle($venta->fresh()));
     }
 
     // Anular una venta y devolver las unidades al inventario.
@@ -184,7 +186,29 @@ class VentaController extends Controller
 
         return redirect()
             ->route('ventas.show', $venta)
-            ->with('success', 'Venta anulada. El stock fue devuelto al inventario.');
+            ->with('success', "Venta {$venta->numero} anulada. El stock fue devuelto al inventario.")
+            ->with('detalle', $this->detalle($venta->fresh()) + [
+                'Motivo de anulación' => $validated['motivo_anulacion'],
+            ]);
+    }
+
+    // Datos de la venta que se muestran como comprobación.
+    private function detalle(Venta $venta): array
+    {
+        $venta->load('cliente', 'detalles.producto');
+
+        return [
+            'Venta' => $venta->numero,
+            'Cliente' => $venta->cliente?->nombre ?? 'Cliente general',
+            'Fecha' => $this->fechaCorta($venta->fecha_venta),
+            'Productos' => $venta->detalles
+                ->map(fn ($detalle) => ($detalle->producto?->codigo ?? '¿?').' × '.$detalle->cantidad.' u.')
+                ->implode(', '),
+            'Subtotal' => $this->soles($venta->subtotal),
+            'IGV (18 %)' => $this->soles($venta->igv),
+            'Total' => $this->soles($venta->total),
+            'Estado' => ucfirst($venta->estado),
+        ];
     }
 
     public function comprobante(Venta $venta)

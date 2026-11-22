@@ -49,7 +49,7 @@ class CategoriaController extends Controller
             ]);
         }
 
-        DB::transaction(function () use ($validated, $slug) {
+        $categoria = DB::transaction(function () use ($validated, $slug) {
             $categoria = Categoria::create([
                 'nombre' => $validated['nombre'],
                 'slug' => $slug,
@@ -63,10 +63,20 @@ class CategoriaController extends Controller
                     'opciones' => AtributoCategoria::opcionesDesdeTexto($atributo['opciones'] ?? null),
                 ]);
             }
+
+            return $categoria;
         });
 
         return redirect()
             ->route('productos.create')
-            ->with('success', 'Categoría creada correctamente.');
+            ->with('success', "Categoría «{$categoria->nombre}» creada correctamente.")
+            ->with('detalle', [
+                'Nombre' => $categoria->nombre,
+                'Descripción' => $categoria->descripcion,
+                'Atributos ('.count($validated['atributos']).')' => collect($validated['atributos'])
+                    ->pluck('nombre')
+                    ->map(fn ($nombre) => trim($nombre))
+                    ->implode(', '),
+            ]);
     }
 }

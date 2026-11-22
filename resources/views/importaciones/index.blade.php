@@ -28,7 +28,7 @@
                         <tr>
                             <th>ID</th>
                             <th>Proveedor</th>
-                            <th>Factura / Contenedor</th>
+                            <th>Factura</th>
                             <th>Fecha Llegada</th>
                             <th>Producto (SKU)</th>
                             <th>Cajas</th>
@@ -50,12 +50,7 @@
                                     </td>
 
                                     <td>
-                                        <small class="d-block">
-                                            Fac: {{ $importacion->numero_factura }}
-                                        </small>
-                                        <small class="text-muted">
-                                            Cont: {{ $importacion->numero_contenedor }}
-                                        </small>
+                                        {{ $importacion->numero_factura }}
                                     </td>
 
                                     <td>

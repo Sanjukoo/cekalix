@@ -128,7 +128,7 @@ php artisan route:list
 ### Importaciones
 - Registro de importaciones desde proveedores
 - Relación con productos mediante detalles
-- Número de factura y contenedor
+- Número de factura
 - Fecha de llegada
 - Estado de importación
 - Transacciones para integridad de datos

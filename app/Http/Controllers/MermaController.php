@@ -68,9 +68,10 @@ class MermaController extends Controller
                 $validated['imagen'] = $imagen->store('mermas', 'local');
             }
 
-            Merma::create($validated);
+            $merma = Merma::create($validated);
 
             return [
+                'merma' => $merma->setRelation('detalleImportacion', $detalle),
                 'cajasEstables' => $cajasRecibidas - $totalNuevo,
             ];
         });
@@ -85,8 +86,8 @@ class MermaController extends Controller
 
         return redirect()
             ->route('mermas.index')
-            ->with('success', 'Merma registrada correctamente.')
-            ->with('cajasEstables', $resultado['cajasEstables']);
+            ->with('success', "Merma #{$resultado['merma']->id} registrada correctamente.")
+            ->with('detalle', $this->detalle($resultado['merma'], $resultado['cajasEstables']));
     }
 
     // Mostrar la fotografía de evidencia de una merma.
@@ -173,6 +174,8 @@ class MermaController extends Controller
             $mermaActual->update($validated);
 
             return [
+                'merma' => $mermaActual->setRelation('detalleImportacion', $detalle),
+                'cambios' => array_keys($mermaActual->getChanges()),
                 'cajasEstables' => $cajasRecibidas - $totalNuevo,
             ];
         });
@@ -190,8 +193,17 @@ class MermaController extends Controller
 
         return redirect()
             ->route('mermas.index')
-            ->with('success', 'Merma actualizada correctamente.')
-            ->with('cajasEstables', $resultado['cajasEstables']);
+            ->with('success', "Merma #{$merma->id} actualizada correctamente.")
+            ->with('detalle', $this->detalle($resultado['merma'], $resultado['cajasEstables']) + [
+                'Campos modificados' => $this->camposModificados($resultado['cambios'], [
+                    'importacion_detalle_id' => 'SKU / importación',
+                    'cantidad' => 'Cajas dañadas',
+                    'motivo' => 'Motivo',
+                    'descripcion' => 'Descripción',
+                    'fecha_registro' => 'Fecha',
+                    'imagen' => 'Fotografía',
+                ]),
+            ]);
     }
 
     // Eliminar una merma existente.
@@ -219,6 +231,7 @@ class MermaController extends Controller
             $totalDanadas = $detalle->mermas()->sum('cantidad');
 
             return [
+                'merma' => $mermaActual->setRelation('detalleImportacion', $detalle),
                 'cajasEstables' => max(
                     0,
                     ($detalle->conteoFisico?->cajas_contadas ?? 0) - $totalDanadas
@@ -237,8 +250,8 @@ class MermaController extends Controller
 
         return redirect()
             ->route('mermas.index')
-            ->with('success', 'Merma eliminada correctamente.')
-            ->with('cajasEstables', $resultado['cajasEstables']);
+            ->with('success', "Merma #{$merma->id} eliminada correctamente.")
+            ->with('detalle', $this->detalle($resultado['merma'], $resultado['cajasEstables']));
     }
 
     private function validar(Request $request): array
@@ -316,6 +329,22 @@ class MermaController extends Controller
             ->firstOrFail();
 
         return $detalle->setRelation('importacion', $importacion);
+    }
+
+    // Datos de la merma que se muestran como comprobación.
+    private function detalle(Merma $merma, int $cajasEstables): array
+    {
+        $detalle = $merma->detalleImportacion;
+
+        return [
+            'Importación' => '#'.$detalle->importacion_id,
+            'SKU' => $detalle->producto_codigo,
+            'Cajas dañadas' => $merma->cantidad,
+            'Motivo' => $merma->motivo === 'OTRO' ? ($merma->descripcion ?? 'Otro') : $merma->motivo,
+            'Fecha' => $this->fechaCorta($merma->fecha_registro),
+            'Fotografía' => $merma->imagen ? 'Adjunta' : 'Sin fotografía',
+            'Cajas estables del SKU' => $cajasEstables,
+        ];
     }
 
     private function errorDeDetalle(ImportacionDetalle $detalle): ?string

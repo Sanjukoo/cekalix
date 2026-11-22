@@ -21,7 +21,6 @@ class ImportacionSeeder extends Seeder
             [
                 'proveedor' => 'Proveedor Internacional A.',
                 'factura' => 'JH-2026-1048',
-                'contenedor' => 'TGHU4729136',
                 'llegada' => '2026-10-14',
                 'estado' => 'Procesada',
                 'detalles' => [
@@ -33,7 +32,6 @@ class ImportacionSeeder extends Seeder
             [
                 'proveedor' => 'Global Trade Corp.',
                 'factura' => 'GT-2026-1053',
-                'contenedor' => 'MSKU6842057',
                 'llegada' => '2026-10-15',
                 'estado' => 'Procesada',
                 'detalles' => [
@@ -45,7 +43,6 @@ class ImportacionSeeder extends Seeder
             [
                 'proveedor' => 'Importadora del Pacífico',
                 'factura' => 'PI-2026-0876',
-                'contenedor' => 'CMAU3158274',
                 'llegada' => '2026-10-16',
                 'estado' => 'En recepción',
                 'detalles' => [
@@ -56,7 +53,6 @@ class ImportacionSeeder extends Seeder
             [
                 'proveedor' => 'Proveedor Internacional A.',
                 'factura' => 'JH-2026-1102',
-                'contenedor' => 'TGHU5093318',
                 'llegada' => '2026-10-22',
                 'estado' => 'En recepción',
                 'detalles' => [
@@ -78,7 +74,6 @@ class ImportacionSeeder extends Seeder
                     'proveedor_id' => $proveedor->id,
                     'numero_factura' => $embarque['factura'],
                 ], [
-                    'numero_contenedor' => $embarque['contenedor'],
                     'fecha_llegada' => $embarque['llegada'],
                     'estado' => 'En recepción',
                 ]);

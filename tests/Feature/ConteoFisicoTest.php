@@ -23,7 +23,6 @@ class ConteoFisicoTest extends TestCase
         $importacion = Importacion::create([
             'proveedor_id' => $proveedor->id,
             'numero_factura' => 'F-'.$proveedor->id,
-            'numero_contenedor' => 'C-'.$proveedor->id,
             'fecha_llegada' => '2026-10-16',
             'estado' => 'En recepción',
         ]);

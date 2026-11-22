@@ -41,7 +41,7 @@ class ConteoFisicoController extends Controller
         // Guardar las rutas anteriores para eliminarlas después de actualizar.
         $imagenesAnteriores = [];
 
-        DB::transaction(function () use (
+        $resumen = DB::transaction(function () use (
             $request,
             $validated,
             $importacion,
@@ -121,7 +121,22 @@ class ConteoFisicoController extends Controller
             }
 
             $importacion->touch();
+
+            $facturadas = (int) $detalles->sum('cajas_facturadas');
+            $contadas = (int) collect($validated['conteos'])->sum();
+
+            return [
+                'skus' => $detalles->count(),
+                'facturadas' => $facturadas,
+                'contadas' => $contadas,
+                'con_diferencia' => $detalles
+                    ->filter(fn ($detalle) => (int) $validated['conteos'][$detalle->id] !== (int) $detalle->cajas_facturadas)
+                    ->count(),
+                'fotos' => count($imagenes),
+            ];
         });
+
+        $diferencia = $resumen['contadas'] - $resumen['facturadas'];
 
         // Eliminar las fotografías anteriores después de guardar correctamente.
         foreach ($imagenesAnteriores as $ruta) {
@@ -130,7 +145,15 @@ class ConteoFisicoController extends Controller
 
         return redirect()
             ->route('importaciones.show', $importacion)
-            ->with('success', 'Conteo físico guardado correctamente.');
+            ->with('success', "Conteo físico de la importación #{$importacion->id} guardado correctamente.")
+            ->with('detalle', [
+                'SKU contados' => $resumen['skus'],
+                'Cajas facturadas' => $resumen['facturadas'],
+                'Cajas contadas' => $resumen['contadas'],
+                'Diferencia total' => ($diferencia > 0 ? '+' : '').$diferencia.' cajas',
+                'SKU con diferencia' => $resumen['con_diferencia'],
+                'Fotografías nuevas' => $resumen['fotos'],
+            ]);
     }
 
     // Mostrar la fotografía de evidencia del conteo físico de un SKU.

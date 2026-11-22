@@ -47,8 +47,7 @@ class ConfirmacionTest extends TestCase
 
         $this->importacion = Importacion::create([
             'proveedor_id' => $proveedor->id,
-            'numero_factura' => 'F-1',
-            'numero_contenedor' => 'C-"1"',
+            'numero_factura' => 'F-"1"',
             'fecha_llegada' => '2026-11-20',
             'estado' => 'En recepción',
         ]);
@@ -143,7 +142,7 @@ class ConfirmacionTest extends TestCase
         $formularios = $this->formulariosConConfirmacion("/importaciones/{$this->importacion->id}");
 
         $conteo = $this->buscar($formularios, "/importaciones/{$this->importacion->id}/conteo");
-        $this->assertSame('C-"1"', $conteo['datos']['Contenedor']);
+        $this->assertSame('F-"1"', $conteo['datos']['Factura']);
 
         $cierre = $this->buscar($formularios, "/importaciones/{$this->importacion->id}/cerrar");
         $this->assertSame('Cerrar recepción', $cierre['boton']);

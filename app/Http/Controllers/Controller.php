@@ -48,4 +48,31 @@ abstract class Controller
             Storage::disk($nombreDisco)->delete($ruta);
         }
     }
+
+    /*
+     * Mensajes de comprobación tras guardar, editar o eliminar.
+     * El layout muestra session('detalle') debajo del mensaje de éxito.
+     */
+
+    // Nombres legibles de los campos que cambiaron en un modelo actualizado.
+    protected function camposModificados(array $cambios, array $etiquetas): string
+    {
+        $nombres = collect($cambios)
+            ->map(fn ($campo) => $etiquetas[$campo] ?? null)
+            ->filter()
+            ->unique()
+            ->values();
+
+        return $nombres->isEmpty() ? 'Ninguno (sin cambios)' : $nombres->implode(', ');
+    }
+
+    protected function soles(mixed $monto): string
+    {
+        return 'S/ '.number_format((float) $monto, 2);
+    }
+
+    protected function fechaCorta(mixed $fecha): ?string
+    {
+        return $fecha ? \Illuminate\Support\Carbon::parse($fecha)->format('d/m/Y') : null;
+    }
 }

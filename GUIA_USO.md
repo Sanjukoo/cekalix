@@ -94,7 +94,6 @@ Al iniciar sesión, verás el Dashboard con:
    - Proveedor: Selecciona de la lista de activos
    - Fecha de Llegada: Fecha en que llegó la mercadería
    - N.º de Factura: Número de factura del proveedor
-   - N.º de Contenedor: Número del contenedor de envío
 4. Completa el detalle de mercadería:
    - SKU/Producto: Selecciona el producto que se importó
    - Cajas Facturadas: Cantidad de cajas
@@ -105,7 +104,7 @@ Al iniciar sesión, verás el Dashboard con:
 1. En la tabla de importaciones verás:
    - ID: Número de folio
    - Proveedor: Nombre del proveedor
-   - Factura/Contenedor: Números de referencia
+   - Factura: Número de referencia
    - Fecha Llegada: Cuándo llegó
    - Producto (SKU): Código del producto importado
    - Cajas: Cantidad de cajas
@@ -115,7 +114,7 @@ Al iniciar sesión, verás el Dashboard con:
 1. Haz clic en el botón Ver en la fila
 2. Se abrirá la página con detalles completos:
    - Información del proveedor
-   - Números de factura y contenedor
+   - Número de factura
    - Productos relacionados con cantidad de cajas
    - Fecha de registro
 
@@ -171,7 +170,7 @@ Al iniciar sesión, verás el Dashboard con:
 ### Scenario: Recibir importación de productos
 
 1. Un proveedor envía mercadería
-   - Tienes factura, número de contenedor, fecha de llegada
+   - Tienes factura y fecha de llegada
 
 2. Registra los productos individuales (si no existen)
    - Ve a Productos → Nuevo Producto
@@ -182,7 +181,7 @@ Al iniciar sesión, verás el Dashboard con:
 3. Registra la importación
    - Ve a Importaciones → Nueva Importación
    - Selecciona el proveedor
-   - Ingresa factura, contenedor, fecha
+   - Ingresa factura y fecha
    - Selecciona cada producto que llegó y cantidad de cajas
    - Registra la importación
 

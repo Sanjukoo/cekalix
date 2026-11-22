@@ -100,7 +100,7 @@ class ProductoController extends Controller
            'descripcion' => 'nullable|string',
        ]);
 
-       DB::transaction(function () use ($request, $validated) {
+       [$producto, $esNuevo] = DB::transaction(function () use ($request, $validated) {
            $detalle = ImportacionDetalle::with('importacion')
                ->whereKey($validated['importacion_detalle_id'])
                ->lockForUpdate()
@@ -119,6 +119,8 @@ class ProductoController extends Controller
            $producto = $detalle->producto_id
                ? Producto::whereKey($detalle->producto_id)->lockForUpdate()->first()
                : Producto::where('codigo', $codigo)->lockForUpdate()->first();
+
+           $esNuevo = !$producto;
 
            if ($producto) {
             // Reutilizar el producto existente y conservar su stock.
@@ -157,11 +159,16 @@ class ProductoController extends Controller
 
         // Guardar o actualizar los atributos sin duplicar sus claves.
         $this->guardarAtributos($request, $producto, $producto->obtenerAtributos());
+
+        return [$producto, $esNuevo];
     });
+
+    $accion = $esNuevo ? 'registrado' : 'actualizado (el SKU ya existía)';
 
     return redirect()
         ->route('productos.index')
-        ->with('success', 'Producto registrado o actualizado correctamente.');
+        ->with('success', "Producto {$producto->codigo} {$accion} correctamente.")
+        ->with('detalle', $this->detalleProducto($producto));
    }
 
 
@@ -214,17 +221,37 @@ class ProductoController extends Controller
             'descripcion' => 'nullable|string',
         ]);
 
-        DB::transaction(function () use ($request, $validated, $producto) {
+        $cambios = DB::transaction(function () use ($request, $validated, $producto) {
             $valoresAnteriores = $producto->obtenerAtributos();
 
             $producto->update($validated);
+            $cambios = array_keys($producto->getChanges());
 
             // Reemplazar los atributos anteriores por los de la categoría actual
             $producto->atributos()->delete();
             $this->guardarAtributos($request, $producto, $valoresAnteriores);
+
+            if ($valoresAnteriores != $producto->obtenerAtributos()) {
+                $cambios[] = 'atributos';
+            }
+
+            return $cambios;
         });
 
-        return redirect()->route('productos.show', $producto)->with('success', 'Producto actualizado correctamente.');
+        return redirect()->route('productos.show', $producto)
+            ->with('success', "Producto {$producto->codigo} actualizado correctamente.")
+            ->with('detalle', $this->detalleProducto($producto) + [
+                'Campos modificados' => $this->camposModificados($cambios, [
+                    'codigo' => 'Código',
+                    'nombre' => 'Nombre',
+                    'categoria_id' => 'Categoría',
+                    'proveedor_id' => 'Proveedor',
+                    'unidades_por_caja' => 'Unidades por caja',
+                    'precio_venta' => 'Precio de venta',
+                    'descripcion' => 'Descripción',
+                    'atributos' => 'Atributos',
+                ]),
+            ]);
     }
 
     // Ajuste manual de stock (conteo físico, merma no registrada, etc.). Siempre queda en el kárdex con su motivo.
@@ -237,8 +264,9 @@ class ProductoController extends Controller
             'cantidad.not_in' => 'El ajuste no puede ser 0.',
         ]);
 
-        DB::transaction(function () use ($validated, $producto) {
+        [$stockAnterior, $stockNuevo] = DB::transaction(function () use ($validated, $producto) {
             $productoActual = Producto::whereKey($producto->id)->lockForUpdate()->firstOrFail();
+            $stockAnterior = $productoActual->stock;
 
             MovimientoInventario::registrar(
                 $productoActual,
@@ -246,21 +274,53 @@ class ProductoController extends Controller
                 'ajuste',
                 $validated['motivo']
             );
+
+            return [$stockAnterior, $productoActual->stock];
         });
+
+        $cantidad = $validated['cantidad'];
 
         return redirect()
             ->route('productos.show', $producto)
-            ->with('success', 'Ajuste de stock registrado en el kárdex.');
+            ->with('success', "Ajuste de stock de {$producto->codigo} registrado en el kárdex.")
+            ->with('detalle', [
+                'Producto' => "{$producto->codigo} - {$producto->nombre}",
+                'Ajuste' => ($cantidad > 0 ? '+' : '').$cantidad.' unidades',
+                'Stock anterior' => $stockAnterior.' unidades',
+                'Stock actual' => $stockNuevo.' unidades',
+                'Motivo' => $validated['motivo'],
+            ]);
     }
 
     public function destroy(Producto $producto)
     {
         if ($producto->importacionDetalles()->exists() || $producto->ventaDetalles()->exists()) {
-            return redirect()->route('productos.index')->with('error', 'No se puede eliminar un producto que tiene importaciones o ventas registradas.');
+            return redirect()->route('productos.index')->with('error', "No se puede eliminar el producto {$producto->codigo} porque tiene importaciones o ventas registradas.");
         }
 
+        $detalle = $this->detalleProducto($producto);
+
         $producto->delete();
-        return redirect()->route('productos.index')->with('success', 'Producto eliminado correctamente.');
+
+        return redirect()->route('productos.index')
+            ->with('success', "Producto {$producto->codigo} eliminado correctamente.")
+            ->with('detalle', $detalle);
+    }
+
+    // Datos del producto que se muestran como comprobación.
+    private function detalleProducto(Producto $producto): array
+    {
+        $producto->loadMissing('categoria', 'proveedor');
+
+        return [
+            'Código (SKU)' => $producto->codigo,
+            'Nombre' => $producto->nombre,
+            'Categoría' => $producto->categoria?->nombre,
+            'Proveedor' => $producto->proveedor?->razon_social,
+            'Unidades por caja' => $producto->unidades_por_caja,
+            'Precio de venta' => $this->soles($producto->precio_venta),
+            'Stock' => $producto->stock.' unidades',
+        ];
     }
 
     /*

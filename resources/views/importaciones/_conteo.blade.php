@@ -43,7 +43,7 @@
                   data-confirm-boton="Guardar conteo"
                   data-confirm-datos="{{ json_encode([
                       'Importación' => '#'.$importacion->id,
-                      'Contenedor' => $importacion->numero_contenedor,
+                      'Factura' => $importacion->numero_factura,
                   ]) }}">
                 @csrf
                 @method('PATCH')
@@ -283,7 +283,7 @@
 
                     $datosCierre = [
                         'Importación' => '#'.$importacion->id,
-                        'Contenedor' => $importacion->numero_contenedor,
+                        'Factura' => $importacion->numero_factura,
                         'SKU' => $detallesCierre->count(),
                         'Cajas dañadas' => $detallesCierre->sum(fn ($d) => $d->mermas->sum('cantidad')),
                         'Cajas en buen estado' => $cajasBuenas,

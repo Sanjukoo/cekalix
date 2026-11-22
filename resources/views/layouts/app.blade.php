@@ -108,7 +108,20 @@
                 <main class="app-main">
                     @if(session('success'))
                         <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
+                            <i class="bi bi-check-circle me-2"></i><strong>{{ session('success') }}</strong>
+
+                            {{-- Comprobación: datos que quedaron guardados tras la operación --}}
+                            @if(is_array(session('detalle')) && count(session('detalle')))
+                                <dl class="confirmacion-datos alerta-detalle">
+                                    @foreach(session('detalle') as $etiqueta => $valor)
+                                        @if($valor !== null && $valor !== '')
+                                            <dt>{{ $etiqueta }}</dt>
+                                            <dd>{{ $valor }}</dd>
+                                        @endif
+                                    @endforeach
+                                </dl>
+                            @endif
+
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                     @endif

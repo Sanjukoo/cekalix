@@ -12,20 +12,6 @@
         </a>
     </div>
 
-    @if (session('success'))
-        <div class="alert alert-success">
-            {{ session('success') }}
-        </div>
-    @endif
-
-    @if (session()->has('cajasEstables'))
-        <div class="alert alert-info">
-            <strong>Resultado:</strong>
-            {{ session('cajasEstables') }} cajas estables
-            en el detalle de importación seleccionado.
-        </div>
-    @endif
-
     <div class="card mb-4">
         <div class="card-body">
             <h5>Total de cajas dañadas registradas</h5>
@@ -44,7 +30,6 @@
                     <thead>
                         <tr>
                             <th>Importación</th>
-                            <th>Contenedor</th>
                             <th>Código SKU</th>
                             <th>Producto</th>
                             <th>Cajas facturadas</th>
@@ -88,10 +73,6 @@
                             <tr>
                                 <td>
                                     #{{ $detalle->importacion->id ?? 'N/A' }}
-                                </td>
-
-                                <td>
-                                    {{ $detalle->importacion->numero_contenedor ?? 'N/A' }}
                                 </td>
 
                                 <td>
@@ -190,7 +171,7 @@
                         @empty
                             <tr>
                                 <td
-                                    colspan="{{ auth()->user()->role === 'admin' ? 13 : 12 }}"
+                                    colspan="{{ auth()->user()->role === 'admin' ? 12 : 11 }}"
                                     class="text-center"
                                 >
                                     Todavía no hay mermas registradas.

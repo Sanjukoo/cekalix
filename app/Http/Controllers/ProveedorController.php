@@ -25,8 +25,11 @@ class ProveedorController extends Controller
         // Un checkbox sin marcar no se envía, por eso se lee como booleano
         $validated['activo'] = $request->boolean('activo');
 
-        Proveedor::create($validated);
-        return redirect()->route('proveedores.index')->with('success', 'Proveedor registrado correctamente.');
+        $proveedor = Proveedor::create($validated);
+
+        return redirect()->route('proveedores.index')
+            ->with('success', "Proveedor «{$proveedor->razon_social}» registrado correctamente.")
+            ->with('detalle', $this->detalle($proveedor));
     }
 
     public function edit(Proveedor $proveedor)
@@ -41,7 +44,18 @@ class ProveedorController extends Controller
         $validated['activo'] = $request->boolean('activo');
 
         $proveedor->update($validated);
-        return redirect()->route('proveedores.index')->with('success', 'Proveedor actualizado correctamente.');
+
+        return redirect()->route('proveedores.index')
+            ->with('success', "Proveedor «{$proveedor->razon_social}» actualizado correctamente.")
+            ->with('detalle', $this->detalle($proveedor) + [
+                'Campos modificados' => $this->camposModificados(array_keys($proveedor->getChanges()), [
+                    'razon_social' => 'Razón social',
+                    'identificador_wechat' => 'WeChat',
+                    'correo_electronico' => 'Correo electrónico',
+                    'pais_origen' => 'País de origen',
+                    'activo' => 'Estado',
+                ]),
+            ]);
     }
 
     public function destroy(Proveedor $proveedor)
@@ -54,8 +68,25 @@ class ProveedorController extends Controller
             return redirect()->route('proveedores.index')->with('error', 'No se puede eliminar un proveedor que tiene productos asociados. Puede desactivarlo.');
         }
 
+        $detalle = $this->detalle($proveedor);
+
         $proveedor->delete();
-        return redirect()->route('proveedores.index')->with('success', 'Proveedor eliminado correctamente.');
+
+        return redirect()->route('proveedores.index')
+            ->with('success', "Proveedor «{$proveedor->razon_social}» eliminado correctamente.")
+            ->with('detalle', $detalle);
+    }
+
+    // Datos del proveedor que se muestran como comprobación.
+    private function detalle(Proveedor $proveedor): array
+    {
+        return [
+            'Razón social' => $proveedor->razon_social,
+            'WeChat' => $proveedor->identificador_wechat,
+            'Correo electrónico' => $proveedor->correo_electronico,
+            'País de origen' => $proveedor->pais_origen,
+            'Estado' => $proveedor->activo ? 'Activo' : 'Inactivo',
+        ];
     }
 
     private function reglas(): array

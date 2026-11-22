@@ -107,7 +107,6 @@ class RolesTest extends TestCase
         $importacion = Importacion::create([
             'proveedor_id' => $proveedor->id,
             'numero_factura' => 'F-1',
-            'numero_contenedor' => 'C-1',
             'fecha_llegada' => '2026-10-01',
         ]);
         ImportacionDetalle::create([

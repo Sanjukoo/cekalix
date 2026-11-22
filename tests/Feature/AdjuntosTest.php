@@ -41,7 +41,6 @@ class AdjuntosTest extends TestCase
         $importacion = Importacion::create([
             'proveedor_id' => $proveedor->id,
             'numero_factura' => 'F-1',
-            'numero_contenedor' => 'C-1',
             'fecha_llegada' => '2026-11-20',
             'estado' => 'En recepción',
         ]);
@@ -181,7 +180,6 @@ class AdjuntosTest extends TestCase
         $this->post('/importaciones', [
             'proveedor_id' => $proveedor->id,
             'numero_factura' => 'F-200',
-            'numero_contenedor' => 'C-200',
             'fecha_llegada' => '2026-11-20',
             'archivo_factura' => UploadedFile::fake()->create('factura.pdf', 50, 'application/pdf'),
             'detalles' => [['producto_codigo' => 'SKU-NUEVO', 'cajas_facturadas' => 5]],
