@@ -13,13 +13,52 @@ use Illuminate\Validation\ValidationException;
 
 class ImportacionController extends Controller
 {
-    public function index()
+    // Una fila por importación, con filtros por búsqueda, proveedor y estado.
+    public function index(Request $request)
     {
-        $importaciones = Importacion::with('proveedor', 'detalles.producto')
-            ->orderBy('id', 'desc')
-            ->paginate(15);
+        $buscar = trim((string) $request->input('buscar', ''));
+        $estados = ['En recepción', 'Procesada'];
+        $estadoActual = in_array($request->input('estado'), $estados, true) ? $request->input('estado') : null;
 
-        return view('importaciones.index', compact('importaciones'));
+        $proveedores = Proveedor::whereHas('importaciones')->orderBy('razon_social')->get(['id', 'razon_social']);
+        $proveedorActual = $proveedores->firstWhere('id', (int) $request->input('proveedor'));
+
+        // Importaciones que coinciden con la búsqueda y el proveedor (sin filtrar aún por estado).
+        $coincidencias = Importacion::query()
+            ->when($buscar !== '', function ($query) use ($buscar) {
+                $query->where(function ($q) use ($buscar) {
+                    $q->where('numero_factura', 'like', "%{$buscar}%")
+                        ->orWhereHas('detalles', fn ($d) => $d->where('producto_codigo', 'like', "%{$buscar}%"))
+                        ->orWhereHas('detalles.producto', fn ($p) => $p->where('nombre', 'like', "%{$buscar}%"));
+                });
+            })
+            ->when($proveedorActual, fn ($query) => $query->where('proveedor_id', $proveedorActual->id));
+
+        // Cantidad por estado para los botones de filtro.
+        $conteoPorEstado = (clone $coincidencias)
+            ->selectRaw('estado, COUNT(*) as total')
+            ->groupBy('estado')
+            ->pluck('total', 'estado');
+
+        $importaciones = (clone $coincidencias)
+            ->with([
+                'proveedor',
+                'detalles' => fn ($d) => $d->with('producto', 'conteoFisico')->withSum('mermas', 'cantidad'),
+            ])
+            ->when($estadoActual, fn ($query) => $query->where('estado', $estadoActual))
+            ->orderBy('id', 'desc')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('importaciones.index', compact(
+            'importaciones',
+            'buscar',
+            'estados',
+            'estadoActual',
+            'proveedores',
+            'proveedorActual',
+            'conteoPorEstado'
+        ));
     }
 
     public function create()

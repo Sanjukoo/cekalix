@@ -615,6 +615,28 @@ body {
     --bs-pagination-focus-color: var(--ck-rojo);
     --bs-pagination-focus-box-shadow: 0 0 0 0.2rem rgba(200, 16, 46, 0.15);
     --bs-pagination-border-radius: 0.5rem;
+    --bs-pagination-padding-x: 0.75rem;
+    --bs-pagination-font-size: 0.875rem;
+    margin-bottom: 0;
+}
+
+/* Contenedor que genera Laravel: texto "Mostrando..." a la izquierda, páginas a la derecha */
+nav > .d-sm-flex {
+    gap: 0.75rem;
+}
+
+nav .small.text-muted {
+    margin-bottom: 0;
+    color: var(--ck-texto-suave) !important;
+}
+
+.page-link {
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.page-item.disabled .page-link {
+    color: var(--ck-texto-suave);
 }
 
 /* ---------- Etiquetas ---------- */
@@ -821,6 +843,155 @@ body {
     .confirmacion-datos dd {
         margin-bottom: 0.4rem;
     }
+}
+
+/* ---------- Campos de archivo (ver public/js/archivos.js) ---------- */
+
+.campo-archivo {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+}
+
+/* Oculto a la vista, pero sigue recibiendo el foco y enviándose con el formulario */
+.campo-archivo-input {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+.campo-archivo-boton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0.45rem 0.9rem;
+    border: 1px solid var(--ck-borde-fuerte);
+    border-radius: var(--ck-radio-chico);
+    background-color: var(--ck-superficie);
+    color: var(--ck-texto);
+    font-size: 0.9rem;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+}
+
+.campo-archivo-sm .campo-archivo-boton {
+    padding: 0.3rem 0.7rem;
+    font-size: 0.82rem;
+}
+
+.campo-archivo-boton:hover,
+.campo-archivo-input:focus-visible + .campo-archivo-boton {
+    border-color: var(--ck-rojo);
+    color: var(--ck-rojo);
+}
+
+.campo-archivo-input:focus-visible + .campo-archivo-boton {
+    box-shadow: 0 0 0 0.2rem rgba(200, 16, 46, 0.15);
+}
+
+.campo-archivo.is-invalid .campo-archivo-boton {
+    border-color: var(--bs-danger, #dc3545);
+}
+
+.campo-archivo-nombre {
+    font-size: 0.8rem;
+    color: #1b7f4b;
+    overflow-wrap: anywhere;
+}
+
+.campo-archivo-nombre:empty {
+    display: none;
+}
+
+/* ---------- Listado de importaciones ---------- */
+
+.tabla-importaciones .col-desplegar {
+    width: 2.5rem;
+    padding-right: 0;
+}
+
+.btn-desplegar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 1px solid var(--ck-borde);
+    border-radius: var(--ck-radio-chico);
+    background-color: var(--ck-superficie);
+    color: var(--ck-texto-suave);
+}
+
+.btn-desplegar:hover,
+.btn-desplegar:focus-visible {
+    border-color: var(--ck-rojo);
+    color: var(--ck-rojo);
+}
+
+.btn-desplegar i {
+    transition: transform 0.2s;
+}
+
+.btn-desplegar[aria-expanded="true"] i {
+    transform: rotate(90deg);
+}
+
+.avance {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin: 0.1rem 0.4rem 0.1rem 0;
+    font-size: 0.82rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.avance-ok {
+    color: var(--ck-texto-suave);
+}
+
+.avance-pendiente {
+    color: #8a5a00;
+}
+
+.avance-alerta {
+    color: var(--ck-rojo);
+}
+
+.avance-listo {
+    color: #1b7f4b;
+    font-weight: 600;
+}
+
+.fila-detalle > td {
+    padding: 0.25rem 1rem 1rem 3rem;
+    background-color: var(--ck-fondo);
+}
+
+.tabla-detalle-sku {
+    background-color: transparent;
+    font-size: 0.85rem;
+}
+
+.tabla-detalle-sku > :not(caption) > * > * {
+    background-color: transparent;
+}
+
+.tabla-detalle-sku th {
+    color: var(--ck-texto-suave);
+    font-weight: 600;
 }
 
 /* ---------- Filtros del catálogo ---------- */
