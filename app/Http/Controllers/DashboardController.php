@@ -8,6 +8,7 @@ use App\Models\Merma;
 use App\Models\MovimientoInventario;
 use App\Models\Producto;
 use App\Models\Venta;
+use App\Models\VentaDetalle;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -135,7 +136,13 @@ class DashboardController extends Controller
             'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
         ];
 
-        $ventasAnualLabels = $mesesLabels;
+        // En los ejes se usan tres letras para que los meses no se inclinen.
+        $mesesCortos = [
+            'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+            'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
+        ];
+
+        $ventasAnualLabels = $mesesCortos;
         $ventasAnualDatos = [];
 
         for ($mes = 1; $mes <= 12; $mes++) {
@@ -157,7 +164,7 @@ class DashboardController extends Controller
             ->groupByRaw('MONTH(fecha_registro)')
             ->pluck('total', 'periodo');
 
-        $mermasLabels = $mesesLabels;
+        $mermasLabels = $mesesCortos;
         $mermasDatos = [];
 
         for ($mes = 1; $mes <= 12; $mes++) {
@@ -176,15 +183,50 @@ class DashboardController extends Controller
         $productosStock = Producto::query()
             ->orderBy('stock', 'asc')
             ->limit(10)
-            ->get(['nombre', 'stock']);
+            ->get(['codigo', 'nombre', 'stock']);
 
+        // El eje muestra el SKU (corto y único); el nombre completo va en el tooltip.
         $stockLabels = $productosStock
+            ->pluck('codigo')
+            ->values();
+
+        $stockNombres = $productosStock
             ->pluck('nombre')
             ->values();
 
         $stockDatos = $productosStock
             ->pluck('stock')
             ->map(fn ($stock) => (int) $stock)
+            ->values();
+
+        /*
+        |--------------------------------------------------------------------------
+        | TOP 5 PRODUCTOS MÁS VENDIDOS
+        |--------------------------------------------------------------------------
+        | Unidades vendidas en todas las ventas vigentes (las anuladas no cuentan).
+        */
+
+        $detallesVigentes = VentaDetalle::query()
+            ->whereHas('venta', fn ($venta) => $venta->vigente());
+
+        $unidadesVendidasTotal = (int) (clone $detallesVigentes)->sum('cantidad');
+
+        $topVendidos = (clone $detallesVigentes)
+            ->with('producto:id,codigo,nombre')
+            ->selectRaw('producto_id, SUM(cantidad) as unidades')
+            ->groupBy('producto_id')
+            ->orderByDesc('unidades')
+            ->orderBy('producto_id')
+            ->limit(5)
+            ->get()
+            ->map(fn ($fila) => [
+                'nombre' => $fila->producto?->nombre ?? 'Producto eliminado',
+                'codigo' => $fila->producto?->codigo,
+                'unidades' => (int) $fila->unidades,
+                'porcentaje' => $unidadesVendidasTotal > 0
+                    ? round($fila->unidades * 100 / $unidadesVendidasTotal, 1)
+                    : 0,
+            ])
             ->values();
 
         /*
@@ -220,7 +262,14 @@ class DashboardController extends Controller
             'mermasDatos' => $mermasDatos,
 
             'stockLabels' => $stockLabels,
+            'stockNombres' => $stockNombres,
             'stockDatos' => $stockDatos,
+
+            // Nombres completos de los meses, para los tooltips de los ejes abreviados.
+            'mesesCompletos' => $mesesLabels,
+
+            'topVendidos' => $topVendidos,
+            'unidadesVendidasTotal' => $unidadesVendidasTotal,
         ]);
     }
 }
